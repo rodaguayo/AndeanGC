@@ -1,4 +1,4 @@
-# Andean Glacierized Catchment (Andes-GC) dataset
+# Andean Glacierized Catchment (Andean-GC) dataset
 
 A comprehensive streamflow dataset for glacierized basins across the Andes mountains (glacier area > 0.1%), integrating data from Chile, Peru, and Argentina. The dataset combines institutional streamflow records with basin characteristics including topographic, climatic, and land cover attributes, along with historical and future climate projections for hydrological analysis and modeling. The final dataset is available on Zenodo: [![DOI](https://zenodo.org/badge/DOI/[ADD_ZENODO_DOI].svg)](https://doi.org/[ADD_ZENODO_DOI])
 
@@ -7,19 +7,18 @@ A comprehensive streamflow dataset for glacierized basins across the Andes mount
 
 Contains processed institutional streamflow datasets:
 
-| Country | Region | Source | Reference |
+| Region | Subregion | Source/Platform | Reference/Website |
 |---------|--------|--------|-----------|
-| Chile | >40° S | CAMELS-CL | add link |
-| Patagonia | <40° S | PMET-obs | add link |
-| Argentina | >40° S | Sistema Nacional de Información Hídrica | add link |
-| Peru | - | Andrea Platform | add link |
+| Patagonia | < 40° S | PMET-obs | [Link](https://www.nature.com/articles/s41597-023-02828-2) |
+| Chile | > 40° S | CAMELS-CL | [Link](https://doi.org/10.5194/hess-22-5817-2018) |
+| Argentina | > 40° S | SNIH | [Link](http://snih.hidricosargentina.gob.ar/) |
+| Peru | - | ANDREA  | [Link](https://snirh.ana.gob.pe/ANDREA/Inicio.aspx) |
 
 Additional data sources:
-- **Glacier coverage**: Randolph Glacier Inventory (RGI) v7.0
-- **Climate data**: ERA5 reanalysis (1950-present)
-- **Climate projections**: CMIP6 models
-- **Topography**: SRTM/ASTER DEM
-- **Land cover**: [specify source]
+- **Glacier coverage**: RGI v6.0
+- **Climate data**: ERA5 (1960-2024)
+- **Topography**: FABDEM (based on COPDEM)
+- **Land cover**: CGLOPS-1 (2019)
 
 ## Workflow
 
@@ -27,24 +26,25 @@ The following Jupyter notebooks are included in the `processing/` folder to faci
 
 The data processing pipeline consists of seven notebooks in the [`processing/`](processing/) folder:
 
-1.  [`00_prepare_glacier_data.ipynb`](processing/00_prepare_glacier_data.ipynb): Prepares and processes glacier coverage data (RGI) for basin analysis
-2.  [`01_data_preprocessing.ipynb`](processing/01_data_preprocessing.ipynb): Cleans and standardizes raw institutional streamflow data from multiple sources
-3.  [`02_basins_delineation.ipynb`](processing/02_basins_delineation.ipynb): Delineates drainage basins from gauge coordinates using digital elevation models
-4.  [`03_data_aggregation_filtering.ipynb`](processing/03_data_aggregation_filtering.ipynb): Merges datasets and filters basins based on criteria (glacier coverage > 0.1%)
-5.  [`04_streaflow_quality_check.ipynb`](processing/04_streaflow_quality_check.ipynb): Performs quality control checks on streamflow time series data
-6.  [`05_basins_attributes.ipynb`](processing/05_basins_attributes.ipynb): Extracts basin characteristics including topography, climate variables from ERA5, and land cover
-7.  [`06_basins_climate.ipynb`](processing/06_basins_climate.ipynb): Processes climate time series from ERA5 reanalysis and CMIP6 projections for selected basins
+-  [`00_prepare_glacier_data.ipynb`](processing/00_prepare_glacier_data.ipynb): Prepares and processes glacier datasets (RGI, dhdt, volume rasters—reprojection, merging, resampling)
+-  [`01_data_preprocessing.ipynb`](processing/01_data_preprocessing.ipynb): Cleans, standardizes and updates raw institutional streamflow data (SENAMHI, SNHI, CAMELS-CL, PMETobs)
+-  [`02_basins_delineation.ipynb`](processing/02_basins_delineation.ipynb): Delineates drainage basins from gauge coordinates using FABDEM and WhiteboxTools; converts basins to vector
+-  [`03_dataset_merging.ipynb`](processing/03_dataset_merging.ipynb): Merges standardized datasets and assembles the unified AndeanGC metadata, timeseries, and basin geometries
+-  [`04_dataset_filtering.ipynb`](processing/04_dataset_filtering.ipynb): Applies selection and quality filters (glacier coverage > 0.1%, data length, intervention keywords) and saves the cleaned dataset
+-  [`05_basins_attributes.ipynb`](processing/05_basins_attributes.ipynb): Extracts multiple basin attributes 
+-  [`06_streamflow_qc.ipynb`](processing/06_streamflow_qc.ipynb): Perform automatic and visual quality check on streamflow time series
+-  [`07_basins_climate.ipynb`](processing/07_basins_climate.ipynb): Processes climate time series from ERA5 reanalysis and CMIP6 projections for selected basins
 
 
 ## Folder description
 
 ```
-├── climate/               # Climate data (ERA5, CMIP6; see zenodo repo)
+├── climate/               # Climate data (see zenodo repository)
 ├── data/                  # Raw institutional streamflow data
-├── dataset/               # Final processed dataset (see zenodo repo)
+├── dataset/               # Final processed dataset (see zenodo repository)
 ├── processing/            # Jupyter notebooks for data processing workflow
 ├── utils/                 # Utility functions and helper scripts
-└── figures/               # Generated plots and visualizations (not tracked)
+└── figures/               # Generated plots and visualizations
 ```
 
 ### Citation
@@ -60,9 +60,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Contact
 
-Rodrigo Aguayo - [add contact information or link]
+Rodrigo Aguayo - [Personal website](https://rodaguayo.github.io/)
 
 ## Acknowledgments
 
 - Data providers: DGA Chile, SNIH Argentina, SENAMHI Peru
-- Funding sources: [if applicable]
+- Funding: FWO
