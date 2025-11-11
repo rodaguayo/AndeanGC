@@ -31,8 +31,8 @@ The data processing pipeline consists of seven notebooks in the [`processing/`](
 -  [`02_basins_delineation.ipynb`](processing/02_basins_delineation.ipynb): Delineates drainage basins from gauge coordinates using FABDEM and WhiteboxTools; converts basins to vector
 -  [`03_dataset_merging.ipynb`](processing/03_dataset_merging.ipynb): Merges standardized datasets and assembles the unified AndeanGC metadata, timeseries, and basin geometries
 -  [`04_dataset_filtering.ipynb`](processing/04_dataset_filtering.ipynb): Applies selection and quality filters (glacier coverage > 0.1%, data length, intervention keywords) and saves the cleaned dataset
--  [`05_basins_attributes.ipynb`](processing/05_basins_attributes.ipynb): Extracts multiple basin attributes 
--  [`06_streamflow_qc.ipynb`](processing/06_streamflow_qc.ipynb): Perform automatic and visual quality check on streamflow time series
+-  [`05_streamflow_qc.ipynb`](processing/06_streamflow_qc.ipynb): Perform automatic and visual/manual quality check on streamflow time series
+-  [`06_basins_attributes.ipynb`](processing/05_basins_attributes.ipynb): Extracts multiple basin attributes 
 -  [`07_basins_climate.ipynb`](processing/07_basins_climate.ipynb): Processes climate time series from ERA5 reanalysis and CMIP6 projections for selected basins
 
 
