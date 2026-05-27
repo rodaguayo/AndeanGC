@@ -7,6 +7,22 @@ __pycache__/
 .ipynb_checkpoints/
 */.ipynb_checkpoints/*
 
+# Environment
+.env
+.venv/
+venv/
+
+# macOS
+.DS_Store
+
+# Build artifacts
+*.egg-info/
+
+# Cache
+.mypy_cache/
+.pytest_cache/
+.coverage
+
 # Data directories
 /climate
 /data

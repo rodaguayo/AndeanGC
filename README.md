@@ -1,6 +1,6 @@
 # Andean Glacierized Catchment (Andean-GC) dataset
 
-A comprehensive streamflow dataset for glacierized basins across the Andes mountains (glacier area > 0.1%), integrating data from Chile, Peru, and Argentina. The dataset combines institutional streamflow records with basin characteristics including topographic, climatic, and land cover attributes, along with historical climate data for hydrological analysis and modeling. The final dataset is available on Zenodo: [![DOI](https://zenodo.org/badge/DOI/[ADD_ZENODO_DOI].svg)](https://doi.org/[ADD_ZENODO_DOI])
+A comprehensive streamflow dataset for glacierized basins across the Andes mountains (glacier area > 0.1%), integrating data from Chile, Peru, and Argentina. The dataset combines institutional streamflow records with basin characteristics including topographic, climatic, and land cover attributes, along with historical climate data for hydrological analysis and modeling. The final dataset is available on Zenodo: [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18035801.svg)](https://doi.org/10.5281/zenodo.18035801)
 
 ## Sources
 
@@ -54,7 +54,7 @@ The data processing pipeline consists of eight notebooks in the [`processing/`](
 └── requirements.txt       # Minimal pip dependencies
 ```
 
-Future CMIP6 climate projections for these basins are available upon request.
+Historical data includes ERA5 (1960–2024). CMIP6 climate projections are available upon request.
 
 ## Getting started
 
@@ -72,7 +72,7 @@ pip install -e .
 If you use this dataset, please cite:
 
 ```
-[Add citation information]
+Aguayo, R. Andean Glacierized Catchment (Andean-GC) dataset. https://doi.org/10.5281/zenodo.18035801 (2026).
 ```
 
 ## License

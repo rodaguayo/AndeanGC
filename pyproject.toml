@@ -30,11 +30,17 @@ dependencies = [
     "ipywidgets",
     "openpyxl",
     "pyarrow",
+    "pyyaml",
 ]
 
 [project.optional-dependencies]
 viz = ["xrspatial", "scikit-learn", "matplotlib"]
 dev = ["jupyter", "nbformat", "pytest"]
+
+[project.urls]
+Homepage = "https://github.com/rodaguayo/AndeanGC"
+Repository = "https://github.com/rodaguayo/AndeanGC"
+DOI = "https://doi.org/10.5281/zenodo.18035801"
 
 [tool.setuptools.packages.find]
 include = ["utils*"]
