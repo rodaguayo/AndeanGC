@@ -2,6 +2,20 @@ from pathlib import Path
 import yaml
 
 LANDMARK = "config.yml"
+_config_cache = None
+
+
+def _load():
+    global _config_cache
+    if _config_cache is None:
+        repo_root = find_repo_root()
+        cfg = repo_root / LANDMARK
+        if cfg.exists():
+            with open(cfg) as f:
+                _config_cache = yaml.safe_load(f) or {}
+        else:
+            _config_cache = {}
+    return _config_cache
 
 
 def find_repo_root():
@@ -12,15 +26,13 @@ def find_repo_root():
     return cwd
 
 
-def load_config():
-    repo_root = find_repo_root()
-    cfg = repo_root / LANDMARK
-    if cfg.exists():
-        with open(cfg) as f:
-            return yaml.safe_load(f) or {}
-    return {}
+def get(key, default=None):
+    return _load().get(key, default)
 
 
 def get_data_root():
-    cfg = load_config()
-    return Path(cfg.get("data_root", ""))
+    return Path(get("data_root", ""))
+
+
+def get_dir(subdir):
+    return get_data_root() / get("dirs", {}).get(subdir, subdir)

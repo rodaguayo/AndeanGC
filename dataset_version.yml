@@ -9,9 +9,6 @@ dataset:
   region:
     lon: [-80, -65]
     lat: [-55, -5]
-  period:
-    q: [1950, 2024]
-    climate_hist: [1960, 2024]
 
 variables:
   streamflow:
@@ -140,8 +137,6 @@ pipeline:
       - "Stream extraction and pour-point snapping"
       - "Raster-to-vector conversion (geocube)"
   filtering:
-    glacier_threshold: 0.1%
-    min_data_length: 365 days
     intervention_keywords: [dam, canal, reservoir, diversion]
   quality_control:
     tool: saqc
@@ -150,7 +145,6 @@ pipeline:
       - "Range outlier detection"
       - "Isolated value flagging"
     manual_review: true
-    stations_removed: 18
 
 outputs:
   naming_convention: "AndeanGC_{type}_{period}[_qc].{csv|gpkg}"

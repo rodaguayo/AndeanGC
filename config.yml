@@ -1,2 +1,58 @@
-# Root directory containing external datasets (DEM, GLACIERS, ADMIN, etc.)
+# Root directory containing external datasets (DEM, GLACIERS, ADMIN, ERA5, etc.)
 data_root: /home/rooda/Datasets
+
+# Coordinate reference systems
+epsg_utm: 32719
+epsg_wgs84: 4326
+epsg_utm_18s: 32718
+
+# Periods
+period_q: ["1950", "2024"]
+period_climate: ["1960", "2024"]
+period_ref_climate: ["1990-01-01", "2019-12-31"]
+
+# RGI version
+rgi_version: "RGI60"
+
+# DEM
+dem_resolution: 90
+
+# Data subdirectories (relative to data_root)
+dirs:
+  glaciers: "GLACIERS"
+  dem: "DEM"
+  era5: "ERA5"
+  land_cover: "LAND_COVER"
+  admin: "ADMIN"
+
+# Glacier/oherence thresholds
+glacier_threshold: 0.1
+
+# Quality control
+min_data_days: 365
+interpolation_limit: 2
+qc_window: "30D"
+qc_constant_threshold: 0.001
+qc_stations_to_remove:
+  - "X00001001"
+  - "X00001219"
+  - "X00002230"
+  - "X00002298"
+  - "X01021002"
+  - "X03041003"
+  - "X03041004"
+  - "X03041005"
+  - "X03430002"
+  - "X03450001"
+  - "X03453001"
+  - "X03825001"
+  - "X03826001"
+  - "X05423005"
+  - "X05703006"
+  - "X07306001"
+  - "X08312000"
+  - "X08386001"
+  - "X11500002"
+
+# Infrastructure
+dam_capacity_threshold: 100
