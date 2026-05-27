@@ -1,0 +1,25 @@
+name: andeangc
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.12
+  - pandas
+  - numpy
+  - geopandas
+  - shapely
+  - rasterio
+  - rioxarray
+  - xarray
+  - xrspatial
+  - geocube
+  - whitebox
+  - saqc
+  - exactextract
+  - xagg
+  - tqdm
+  - plotly
+  - ipywidgets
+  - openpyxl
+  - pyarrow
+  - jupyter

@@ -10,5 +10,4 @@ __pycache__/
 # Data directories
 /climate
 /data
-/dataset
 /temp
