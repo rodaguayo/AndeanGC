@@ -1,6 +1,6 @@
 # Andean Glacierized Catchment (Andean-GC) dataset
 
-A comprehensive streamflow dataset for glacierized basins across the Andes mountains (glacier area > 0.1%), integrating data from Chile, Peru, and Argentina. The dataset combines institutional streamflow records with basin characteristics including topographic, climatic, and land cover attributes, along with historical and future climate projections for hydrological analysis and modeling. The final dataset is available on Zenodo: [![DOI](https://zenodo.org/badge/DOI/[ADD_ZENODO_DOI].svg)](https://doi.org/[ADD_ZENODO_DOI])
+A comprehensive streamflow dataset for glacierized basins across the Andes mountains (glacier area > 0.1%), integrating data from Chile, Peru, and Argentina. The dataset combines institutional streamflow records with basin characteristics including topographic, climatic, and land cover attributes, along with historical climate data for hydrological analysis and modeling. The final dataset is available on Zenodo: [![DOI](https://zenodo.org/badge/DOI/[ADD_ZENODO_DOI].svg)](https://doi.org/[ADD_ZENODO_DOI])
 
 ## Sources
 
@@ -15,7 +15,7 @@ Contains processed institutional streamflow datasets:
 
 Additional data sources:
 - **Glacier coverage**: RGI v6.0
-- **Climate data**: ERA5 (1960-2024), CMIP6 (2025-2099)
+- **Climate data**: ERA5 (1960-2024)
 - **Topography**: FABDEM (based on COPDEM)
 - **Land cover**: CGLOPS-1 (2019)
 
@@ -30,14 +30,13 @@ The data processing pipeline consists of eight notebooks in the [`processing/`](
 - [`04_dataset_filtering.ipynb`](processing/04_dataset_filtering.ipynb): Applies selection and quality filters (glacier coverage > 0.1%, data length, intervention keywords) and saves the cleaned dataset
 - [`05_streamflow_qc.ipynb`](processing/05_streamflow_qc.ipynb): Performs automatic and visual/manual quality check on streamflow time series using `saqc`
 - [`06_basins_attributes.ipynb`](processing/06_basins_attributes.ipynb): Extracts multiple basin attributes (topographic, climatic, glacier, land cover, dams)
-- [`07_basins_climate.ipynb`](processing/07_basins_climate.ipynb): Processes climate time series from ERA5 reanalysis and CMIP6 projections for selected basins
+- [`07_basins_climate.ipynb`](processing/07_basins_climate.ipynb): Processes historical climate time series from ERA5 reanalysis for selected basins
 
 ## Repository structure
 
 ```
-├── climate/               # Historical (ERA5) and future (CMIP6) climate time series
-│   ├── historical/        #   AndeanGC_*_ERA5_1960_2024.parquet
-│   └── future/            #   <var>_<temp>_<GCM>_<ssp>_2025_2099.parquet
+├── climate/               # Historical climate time series (ERA5)
+│   └── historical/        #   AndeanGC_*_ERA5_1960_2024.parquet
 ├── data/                  # Raw institutional streamflow data
 │   ├── CAMELS_CL/         #   Chile (DGA)
 │   ├── PMET_OBS/          #   Patagonia
@@ -54,6 +53,8 @@ The data processing pipeline consists of eight notebooks in the [`processing/`](
 ├── pyproject.toml         # Project metadata and pip dependencies
 └── requirements.txt       # Minimal pip dependencies
 ```
+
+Future CMIP6 climate projections for these basins are available upon request.
 
 ## Getting started
 
