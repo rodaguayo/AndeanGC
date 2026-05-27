@@ -51,7 +51,6 @@ The data processing pipeline consists of eight notebooks in the [`processing/`](
 │   └── polygon_extract.py #   Zonal raster statistics and time series extraction
 ├── environment.yml        # Conda environment (conda-forge)
 ├── pyproject.toml         # Project metadata and pip dependencies
-└── requirements.txt       # Minimal pip dependencies
 ```
 
 Historical data includes ERA5 (1960–2024). CMIP6 climate projections are available upon request.
