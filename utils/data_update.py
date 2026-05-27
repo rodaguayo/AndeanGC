@@ -1,6 +1,4 @@
 import pandas as pd
-import numpy as np
-from tqdm import tqdm
 
 def update_camels_cl_data(original_file, updated_parquet, output_file):
     """Update CAMELS_CL daily data by combining historical and recent data."""
