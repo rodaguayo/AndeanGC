@@ -1,0 +1,2 @@
+# Root directory containing external datasets (DEM, GLACIERS, ADMIN, etc.)
+data_root: /home/rooda/Datasets
