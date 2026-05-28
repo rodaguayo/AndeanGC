@@ -54,5 +54,10 @@ qc_stations_to_remove:
   - "X08386001"
   - "X11500002"
 
+# Gauge ID formatting
+gauge_id_zfill: 8
+gauge_id_prefix_pe: "P"
+gauge_id_prefix_arcl: "X"
+
 # Infrastructure
 dam_capacity_threshold: 100
