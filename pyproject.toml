@@ -8,34 +8,10 @@ version = "1.0.0"
 description = "Andean Glacierized Catchment dataset: a unified streamflow dataset for glacierized basins across the Andes"
 readme = "README.md"
 license = { text = "MIT" }
-authors = [
-    { name = "Rodrigo Aguayo", email = "rodrigo.aguayo@kuleuven.be" },
-]
 requires-python = ">=3.12"
-dependencies = [
-    "pandas",
-    "numpy",
-    "geopandas",
-    "shapely",
-    "rasterio",
-    "rioxarray",
-    "xarray",
-    "geocube",
-    "whitebox",
-    "saqc",
-    "exactextract",
-    "xagg",
-    "tqdm",
-    "plotly",
-    "ipywidgets",
-    "openpyxl",
-    "pyarrow",
-    "pyyaml",
+authors = [
+    { name = "Rodrigo Aguayo", email = "rodrigo.aguayo@vub.be" },
 ]
-
-[project.optional-dependencies]
-viz = ["xrspatial", "scikit-learn", "matplotlib"]
-dev = ["jupyter", "nbformat", "pytest"]
 
 [project.urls]
 Homepage = "https://github.com/rodaguayo/AndeanGC"

@@ -3,23 +3,25 @@ channels:
   - conda-forge
 dependencies:
   - python=3.12
-  - pandas
-  - numpy
+
+  # geospatial stack (conda-only, critical)
   - geopandas
-  - shapely
   - rasterio
   - rioxarray
-  - xarray
-  - xrspatial
+  - shapely
   - geocube
   - whitebox
-  - saqc
   - exactextract
   - xagg
-  - tqdm
-  - plotly
-  - ipywidgets
-  - openpyxl
+  - saqc
   - pyarrow
   - pyyaml
+  - tqdm
+
+  # notebooks / workflow
   - jupyter
+
+  # install your package
+  - pip
+  - pip:
+      - -e .
