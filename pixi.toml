@@ -1,0 +1,31 @@
+[workspace]
+name = "andeangc"
+version = "1.0.0"
+description = "Andean Glacierized Catchment dataset: a unified streamflow dataset for glacierized basins across the Andes"
+channels = ["conda-forge"]
+platforms = ["linux-64"]
+
+[dependencies]
+python = "3.12.*"
+geopandas = "*"
+rasterio = "*"
+rioxarray = "*"
+shapely = "*"
+geocube = "*"
+whitebox = "*"
+exactextract = "*"
+xagg = "*"
+saqc = "*"
+pyarrow = "*"
+pyyaml = "*"
+tqdm = "*"
+numpy = "*"
+pandas = "*"
+xarray = "*"
+xarray-spatial = "*"
+plotly = "*"
+ipywidgets = "*"
+jupyter = "*"
+
+[pypi-dependencies]
+andeangc = { path = ".", editable = true }

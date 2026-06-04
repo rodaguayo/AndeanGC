@@ -18,6 +18,9 @@ venv/
 # Build artifacts
 *.egg-info/
 
+# Pixi environment
+.pixi/
+
 # Cache
 .mypy_cache/
 .pytest_cache/

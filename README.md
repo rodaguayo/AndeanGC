@@ -49,7 +49,8 @@ The data processing pipeline consists of eight notebooks in the [`processing/`](
 │   ├── data_homogenize.py #   Parse raw SENAMHI Excel files
 │   ├── data_update.py     #   Extend datasets with recent records
 │   └── polygon_extract.py #   Zonal raster statistics and time series extraction
-├── environment.yml        # Conda environment (conda-forge)
+├── pixi.toml              # Pixi project manifest (conda-forge + pip)
+├── pixi.lock              # Pixi lockfile (auto-generated)
 ├── pyproject.toml         # Project metadata and pip dependencies
 ```
 
@@ -58,12 +59,8 @@ Historical data includes ERA5 (1960–2024). CMIP6 climate projections are avail
 ## Getting started
 
 ```bash
-# Conda (recommended)
-conda env create -f environment.yml
-conda activate andeangc
-
-# or pip
-pip install -e .
+pixi install
+pixi shell
 ```
 
 ## Citation
