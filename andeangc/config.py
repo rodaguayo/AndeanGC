@@ -36,3 +36,13 @@ def get_data_root():
 
 def get_dir(subdir):
     return get_data_root() / get("dirs", {}).get(subdir, subdir)
+
+
+def get_version_root():
+    """Root of the current dataset version, e.g. <repo>/data/v1.0."""
+    return find_repo_root() / get("data_dir", "data") / get("version", "")
+
+
+def get_version_dir(subdir):
+    """A subdirectory of the current version: "raw", "final" or "figures"."""
+    return get_version_root() / subdir
