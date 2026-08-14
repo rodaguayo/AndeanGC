@@ -20,3 +20,17 @@ DOI = "https://doi.org/10.5281/zenodo.18035801"
 
 [tool.setuptools.packages.find]
 include = ["andeangc*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 120
+# Notebooks are the pipeline itself and are formatted by hand; linting them
+# would be noise. The modules and the tests are what CI guards.
+extend-exclude = ["*.ipynb"]
+
+[tool.ruff.lint]
+# Deliberately narrow: real errors (E, F), import hygiene (I), likely bugs (B)
+# and dead-obvious modernisations (UP). No formatting opinions.
+select = ["E", "F", "I", "B", "UP"]
