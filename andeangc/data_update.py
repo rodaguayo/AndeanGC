@@ -1,7 +1,23 @@
+"""Extend the published streamflow datasets with recent records (notebook 01).
+
+CAMELS-CL and PMET-obs both stop well before the present. Both functions here reindex the original
+series out to the new end date and fill the gap with `combine_first`, so the
+published values always win where the two overlap.
+Only gauges already present in the original dataset are carried over
+"""
+
+from pathlib import Path
+
 import pandas as pd
 
-def update_camels_cl_data(original_file, updated_parquet, output_file):
-    """Update CAMELS_CL daily data by combining historical and recent data."""
+
+def update_camels_cl_data(original_file: str | Path, updated_parquet: str | Path,
+                          output_file: str | Path) -> pd.DataFrame:
+    """Update CAMELS_CL daily data by combining historical and recent data.
+
+    Gauge ids in the DGA export are bare station codes, matching CAMELS-CL's
+    own columns; see `update_pmet_data` for the prefixed variant.
+    """
     original_data = pd.read_csv(original_file, index_col='date', parse_dates=['date'])
     original_data = original_data.reindex(pd.date_range(start=original_data.index.min(), end='2025-12-31', freq='D'))
 
@@ -25,15 +41,19 @@ def update_camels_cl_data(original_file, updated_parquet, output_file):
     final_data.to_csv(output_file, index_label='date')
     return final_data
 
-def update_pmet_data(original_file, updated_cl_file, updated_arg_file, output_file):
+def update_pmet_data(original_file: str | Path, updated_cl_file: str | Path,
+                     updated_arg_file: str | Path, output_file: str | Path) -> pd.DataFrame:
     """
     Update PMET data by merging original data with updated Chile and Argentina datasets.
-    
+
     Parameters:
     - original_file: path to original PMET data (1950-2020)
     - updated_cl_file: path to updated Chile data (parquet)
     - updated_arg_file: path to updated Argentina data (csv)
     - output_file: path to save the merged output
+
+    PMET-obs spans both countries, so the Chilean station codes are given the
+    'X' prefix and zero-padded to PMET's own id width before joining.
     """
     # Load and reindex original data
     original_data = pd.read_csv(original_file, index_col=0)

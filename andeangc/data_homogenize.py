@@ -1,16 +1,36 @@
-import pandas as pd
+"""Parse the raw exports into tidy frames (notebook 01).
+
+One workbook per gauge, in the layout the ANA portal produces: a metadata block
+in the first rows, then a year x day table with one column per month. The field
+labels vary between exports (accented or not, Spanish or English), so
+`extract_metadata` matches on substrings rather than fixed cell positions.
+
+`process_excel_files` is the entry point; it skips workbooks that fail to parse
+rather than aborting the batch.
+"""
+
+from collections.abc import Sequence
+from pathlib import Path
+
 import numpy as np
+import pandas as pd
 from tqdm import tqdm
 
-def extract_metadata(file_path):
-    """Extract metadata from ANA Excel file"""
+
+def extract_metadata(file_path: Path) -> dict[str, str | int | None]:
+    """Extract one gauge's metadata from an ANA Excel file.
+
+    Returns the fields the pipeline needs (name, operator, lat/lon, altitude),
+    with `None` for anything the workbook does not carry. Takes a `Path`: the
+    file name is reported back in the result.
+    """
     # Read the first few rows to get metadata
     df_meta = pd.read_excel(file_path, header=None, nrows=15)
     
     metadata = {}
     
     # Extract metadata from the structured format
-    for idx, row in df_meta.iterrows():
+    for _, row in df_meta.iterrows():
         if pd.notna(row.iloc[0]):
             key = str(row.iloc[0]).strip()
             
@@ -58,8 +78,13 @@ def extract_metadata(file_path):
         'altitude': altitude,
     }
     
-def extract_timeseries_data(file_path, metadata):
-    """Extract time series data from ANA Excel file and return as pandas Series"""
+def extract_timeseries_data(file_path: Path, metadata: dict) -> pd.Series:
+    """Unpivot the year x day x month table into a daily series.
+
+    Named after the gauge in `metadata`, reindexed onto a gap-free daily range
+    so missing days are NaN rather than absent. Impossible dates produced by
+    the rectangular layout (31 February and friends) are dropped.
+    """
     
     # Read the data starting from row 13 (header) with first 31 rows of data
     df = pd.read_excel(file_path, header=13)
@@ -105,17 +130,20 @@ def extract_timeseries_data(file_path, metadata):
     
     return series
 
-def process_excel_files(file_paths):
+def process_excel_files(file_paths: Sequence[Path]) -> tuple[pd.DataFrame, pd.DataFrame]:
     """
     Process multiple Excel files and return metadata and timeseries DataFrames
-    
+
     Parameters:
     file_paths (list): List of Excel file paths
-    
+
     Returns:
     tuple: (metadata_df, timeseries_df)
-        - metadata_df: DataFrame with metadata for all stations
-        - timeseries_df: DataFrame with date index and station columns
+        - metadata_df: one row per station, with a `days_with_data` count
+        - timeseries_df: date index, one column per station
+
+    A workbook that raises is reported and skipped, so a single malformed
+    export does not lose the rest of the batch.
     """
     
     all_metadata = []
@@ -135,7 +163,7 @@ def process_excel_files(file_paths):
             all_metadata.append(metadata)
             all_timeseries.append(series)
             
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 - one malformed export must not lose the batch
             print(f"Error processing {file_path}: {e}")
             continue
     
