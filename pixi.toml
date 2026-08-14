@@ -6,26 +6,44 @@ channels = ["conda-forge"]
 platforms = ["linux-64"]
 
 [dependencies]
-python = "3.12.*"
-geopandas = "*"
-rasterio = "*"
-rioxarray = "*"
-shapely = "*"
-geocube = "*"
-whitebox = "*"
-exactextract = "*"
-xagg = "*"
-saqc = "*"
-pyarrow = "*"
-pyyaml = "*"
-tqdm = "*"
-numpy = "*"
-pandas = "*"
-xarray = "*"
-xarray-spatial = "*"
-plotly = "*"
-ipywidgets = "*"
-jupyter = "*"
+python = "3.13.*"
+
+# geospatial
+geopandas = ">=1.1,<2"
+rasterio = ">=1.5,<2"
+rioxarray = ">=0.22,<1"
+shapely = ">=2.1,<3"
+geocube = ">=0.7,<1"
+whitebox = ">=2.3,<3"
+exactextract = ">=0.3,<1"
+xagg = ">=0.3,<1"
+
+# arrays and tabular
+numpy = ">=2.2,<3"
+pandas = ">=3,<4"
+xarray = ">=2026.4,<2027"     # CalVer: no major boundary, so cap by year
+xarray-spatial = ">=0.10,<1"
+scikit-learn = ">=1.8,<2"
+numba = ">=0.65,<0.66"
+netcdf4 = ">=1.7,<2"
+pyarrow = ">=24,<25"
+
+# i/o and utilities
+saqc = ">=2.8,<3"
+openpyxl = ">=3.1,<4"
+pyyaml = ">=6,<7"
+tqdm = ">=4.67,<5"
+
+# plotting and notebooks
+plotly = ">=6.8,<7"
+python-kaleido = ">=1,<2"
+ipywidgets = ">=8.1,<9"
+jupyter = ">=1.1,<2"
 
 [pypi-dependencies]
 andeangc = { path = ".", editable = true }
+
+[tasks]
+# kaleido >=1 renders figures through a real browser, which conda-forge does not
+# ship. Run once after `pixi install` to enable fig.write_image in figures/.
+get-chrome = "plotly_get_chrome -y"

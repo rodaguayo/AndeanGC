@@ -8,7 +8,7 @@ version = "1.0.0"
 description = "Andean Glacierized Catchment dataset: a unified streamflow dataset for glacierized basins across the Andes"
 readme = "README.md"
 license = { text = "MIT" }
-requires-python = ">=3.12"
+requires-python = ">=3.13"
 authors = [
     { name = "Rodrigo Aguayo", email = "rodrigo.aguayo@vub.be" },
 ]
@@ -19,4 +19,4 @@ Repository = "https://github.com/rodaguayo/AndeanGC"
 DOI = "https://doi.org/10.5281/zenodo.18035801"
 
 [tool.setuptools.packages.find]
-include = ["utils*"]
+include = ["andeangc*"]

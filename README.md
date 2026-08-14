@@ -23,7 +23,6 @@ Additional data sources:
 
 The data processing pipeline consists of eight notebooks in the [`processing/`](processing/) folder:
 
-- [`00_prepare_glacier_data.ipynb`](processing/00_prepare_glacier_data.ipynb): Prepares and processes glacier datasets (RGI, dhdt, volume rasters — reprojection, merging, resampling)
 - [`01_data_preprocessing.ipynb`](processing/01_data_preprocessing.ipynb): Cleans, standardizes and updates raw institutional streamflow data (SENAMHI, SNHI, CAMELS-CL, PMETobs)
 - [`02_basins_delineation.ipynb`](processing/02_basins_delineation.ipynb): Delineates drainage basins from gauge coordinates using FABDEM and WhiteboxTools; converts basins to vector
 - [`03_dataset_merging.ipynb`](processing/03_dataset_merging.ipynb): Merges standardized datasets and assembles the unified AndeanGC metadata, timeseries, and basin geometries
@@ -35,26 +34,33 @@ The data processing pipeline consists of eight notebooks in the [`processing/`](
 ## Repository structure
 
 ```
-├── climate/               # Historical climate time series (ERA5)
-│   └── historical/        #   AndeanGC_*_ERA5_1960_2024.parquet
-├── data/                  # Raw institutional streamflow data
-│   ├── CAMELS_CL/         #   Chile (DGA)
-│   ├── PMET_OBS/          #   Patagonia
-│   ├── SENAMHI_PERU/      #   Peru (raw .xlsx + processed)
-│   └── SNHI_ARG/          #   Argentina (raw .xlsx + processed)
-├── dataset/               # Final processed dataset (see zenodo repository)
-├── figures/               # Generated plots and visualizations
+├── data/                  # Data — NOT in git (OneDrive backup, Zenodo release)
+│   ├── resources/         #   institutional streamflow data, shared by all versions
+│   └── v10/               #   one folder per dataset version (v10, v11, ...)
+│       ├── AndeanGC_data_1950_2024.csv     # published dataset
+│       ├── AndeanGC_data_1950_2024_qc.csv
+│       ├── AndeanGC_metadata.csv
+│       ├── AndeanGC_shape.gpkg
+│       ├── climate/       #     historical/ (ERA5) and future/ (CMIP6) time series
+│       ├── figures/       #     generated plots
+│       ├── dataset_version.yml  # manifest for this version
+│       └── README_zenodo.md     # Zenodo record for this version
+├── figures/               # Jupyter notebooks that produce the plots
 ├── processing/            # Jupyter notebooks (data processing pipeline)
-├── utils/                 # Utility functions
+├── andeangc/              # Utility functions (installed package)
+│   ├── config.py          #   Resolve config.yml keys and data paths
 │   ├── data_homogenize.py #   Parse raw SENAMHI Excel files
 │   ├── data_update.py     #   Extend datasets with recent records
+│   ├── basin_delineation.py #  WhiteboxTools delineation pipeline (nb02)
+│   ├── basin_attributes.py #  Topographic, glacier, land cover and dam attributes (nb06)
 │   └── polygon_extract.py #   Zonal raster statistics and time series extraction
 ├── pixi.toml              # Pixi project manifest (conda-forge + pip)
 ├── pixi.lock              # Pixi lockfile (auto-generated)
 ├── pyproject.toml         # Project metadata and pip dependencies
 ```
 
-Historical data includes ERA5 (1960–2024). CMIP6 climate projections are available upon request.
+Historical data includes ERA5 (1960–2024). CMIP6 climate projections are available upon request. The `data/` tree is deliberately outside git: it is published to Zenodo, while git tracks only the code that produces it.
+
 
 ## Getting started
 
