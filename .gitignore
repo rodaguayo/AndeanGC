@@ -24,10 +24,9 @@ venv/
 # Cache
 .mypy_cache/
 .pytest_cache/
+.ruff_cache/
 .coverage
+.vscode
 
-# Data directories
-/climate
 /data
 /temp
-/dataset

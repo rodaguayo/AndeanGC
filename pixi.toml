@@ -39,11 +39,27 @@ plotly = ">=6.8,<7"
 python-kaleido = ">=1,<2"
 ipywidgets = ">=8.1,<9"
 jupyter = ">=1.1,<2"
+dask = ">=2026.7.1,<2027"
 
 [pypi-dependencies]
 andeangc = { path = ".", editable = true }
 
+[feature.dev.dependencies]
+pytest = ">=8,<9"
+ruff = ">=0.14,<1"
+nbstripout = ">=0.8,<1"
+
+[environments]
+dev = ["dev"]
+
 [tasks]
+test = "pytest -q"
+lint = "ruff check ."
+# Outputs must not be committed: they bloat diffs and leak absolute paths.
+# `install-hooks` registers the git filter that strips them on commit; the
+# verify task is the CI safety net for anyone who has not run it.
+install-hooks = "nbstripout --install --attributes .gitattributes"
+check-notebooks = "nbstripout --verify processing/*.ipynb figures/*.ipynb"
 # kaleido >=1 renders figures through a real browser, which conda-forge does not
 # ship. Run once after `pixi install` to enable fig.write_image in figures/.
 get-chrome = "plotly_get_chrome -y"
