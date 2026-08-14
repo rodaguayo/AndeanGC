@@ -1,0 +1,27 @@
+cff-version: 1.2.0
+message: "If you use this dataset or the code that produces it, please cite it as below."
+title: "Andean Glacierized Catchment (Andean-GC) dataset"
+abstract: >-
+  A streamflow dataset for glacierized basins across the Andes (glacier area
+  > 0.1%), integrating institutional records from Chile, Peru and Argentina
+  with topographic, climatic, glacier and land cover basin attributes and
+  historical ERA5 climate time series.
+type: dataset
+authors:
+  - family-names: Aguayo
+    given-names: Rodrigo
+    email: rodrigo.aguayo@vub.be
+    affiliation: "Vrije Universiteit Brussel"
+version: "1.0.0"
+date-released: "2026-05-28"
+doi: "10.5281/zenodo.18035801"
+license: MIT
+repository-code: "https://github.com/rodaguayo/AndeanGC"
+url: "https://doi.org/10.5281/zenodo.18035801"
+keywords:
+  - streamflow
+  - glaciers
+  - Andes
+  - hydrology
+  - catchment attributes
+  - ERA5
