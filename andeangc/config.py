@@ -2,11 +2,13 @@
 """
 
 from pathlib import Path
+from typing import Any
+
 import yaml
 
 LANDMARK = "config.yml"
 
-def _find_root():
+def _find_root() -> Path:
     cwd = Path.cwd().resolve()
     for parent in [cwd] + list(cwd.parents):
         if (parent / LANDMARK).exists():
@@ -30,7 +32,7 @@ VERSION = ROOT / "data" / _config.get("version", "")
 RESOURCES = ROOT / "data" / "resources"
 
 
-def __getattr__(name):
+def __getattr__(name: str) -> Any:
     """Resolve unknown module attributes against config.yml (PEP 562).
 
     Only called when normal lookup fails, so the names defined above always win.
@@ -40,11 +42,11 @@ def __getattr__(name):
     except KeyError:
         raise AttributeError(f"{name!r} is not defined in {_config_file}") from None
 
-def __dir__():
+def __dir__() -> list[str]:
     """Include the config.yml keys, so `cfg.<tab>` completes them in Jupyter."""
     return sorted(set(globals()) | set(_config))
 
 
-def data_dir(subdir):
+def data_dir(subdir: str) -> Path:
     """An external dataset directory under `data_root`, e.g. data_dir('era5')."""
     return Path(_config.get("data_root", "")) / _config.get("dirs", {}).get(subdir, subdir)
