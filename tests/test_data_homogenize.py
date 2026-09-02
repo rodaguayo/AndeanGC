@@ -5,6 +5,7 @@ so these tests need no access to the real data.
 """
 
 import pandas as pd
+import pytest
 
 from andeangc import data_homogenize
 
@@ -133,7 +134,7 @@ def test_registry_assigns_the_lowest_free_id_and_records_it(tmp_path):
         "Ancash,P00000001", "Condorcerro,P00000002", "Zulia,P00000003"]
 
 
-def test_registry_is_created_when_absent(tmp_path):
-    registry = tmp_path / "new.csv"
-    assert data_homogenize.assign_gauge_ids(["B", "A"], registry, "P", 8) == ["P00000002", "P00000001"]
-    assert registry.exists()
+def test_missing_registry_raises_rather_than_renumbering(tmp_path):
+    """The registry is not in git, so absent means lost — never a licence to reassign ids."""
+    with pytest.raises(FileNotFoundError, match="renumber every Peruvian gauge"):
+        data_homogenize.assign_gauge_ids(["A"], tmp_path / "gone.csv", "P", 8)

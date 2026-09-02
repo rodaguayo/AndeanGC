@@ -196,23 +196,30 @@ def assign_gauge_ids(
     how the files arrived.
 
     The registry is therefore the authority: a two-column CSV
-    (`gauge_name,gauge_id`) at the repo root, where it is under version control —
-    `data/` is not, so a registry stored beside the raw exports would be absent
-    from a fresh clone and every id would be reassigned. A name already in it
-    keeps its id forever. A name that is not gets the lowest unused number, and
-    the registry is rewritten so the new assignment is a reviewable diff. New
-    names are sorted before they are numbered, so the result does not depend on
-    the order the workbooks were read.
+    (`gauge_name,gauge_id`) at `data/resources/gauge_ids_peru.csv`. A name already
+    in it keeps its id forever. A name that is not gets the lowest unused number,
+    and the registry is rewritten so the addition is visible. New names are sorted
+    before they are numbered, so the result does not depend on the order the
+    workbooks were read.
 
     Renaming a station upstream reads as a new station here — that is deliberate.
     It surfaces as an added registry row rather than silently rewriting an id that
     a published version already used.
+
+    A missing registry raises rather than starting a fresh one. The registry lives
+    under `data/`, which is not in git, so "absent" means it was lost or not synced
+    — not that ids need inventing. Renumbering 26 stations from scratch would
+    produce a plausible-looking dataset that no longer joins against any published
+    version, and nothing downstream would notice.
     """
-    registry = (
-        pd.read_csv(registry_path, dtype=str)
-        if registry_path.exists()
-        else pd.DataFrame(columns=["gauge_name", "gauge_id"])
-    )
+    if not registry_path.exists():
+        raise FileNotFoundError(
+            f"gauge id registry not found: {registry_path}\n"
+            "It is not in git (it lives under data/), so restore it from the data backup "
+            "rather than letting the pipeline assign new ids — regenerating it would "
+            "renumber every Peruvian gauge and break joins against published versions."
+        )
+    registry = pd.read_csv(registry_path, dtype=str)
     known = dict(zip(registry["gauge_name"], registry["gauge_id"], strict=True))
 
     new = sorted(set(names) - set(known))
