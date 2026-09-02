@@ -179,3 +179,55 @@ def process_excel_files(file_paths: Sequence[Path]) -> tuple[pd.DataFrame, pd.Da
         timeseries_df = pd.DataFrame()
     
     return metadata_df, timeseries_df
+
+def assign_gauge_ids(
+    names: Sequence[str],
+    registry_path: Path,
+    prefix: str,
+    zfill: int,
+) -> list[str]:
+    """Map SENAMHI station names to their permanent gauge ids.
+
+    The ANDREA export carries no station code — every file downloads as
+    `DatosSerie(N).xlsx`, where `N` is the browser's collision counter — so the
+    ids used to come from the filename and moved whenever the archive was
+    re-downloaded (`Condorcerro` was `P00000008` in v10 and `P00000009` in v11).
+    `gauge_id` is the join key of the published dataset, so it must not depend on
+    how the files arrived.
+
+    The registry is therefore the authority: a two-column CSV
+    (`gauge_name,gauge_id`) at the repo root, where it is under version control —
+    `data/` is not, so a registry stored beside the raw exports would be absent
+    from a fresh clone and every id would be reassigned. A name already in it
+    keeps its id forever. A name that is not gets the lowest unused number, and
+    the registry is rewritten so the new assignment is a reviewable diff. New
+    names are sorted before they are numbered, so the result does not depend on
+    the order the workbooks were read.
+
+    Renaming a station upstream reads as a new station here — that is deliberate.
+    It surfaces as an added registry row rather than silently rewriting an id that
+    a published version already used.
+    """
+    registry = (
+        pd.read_csv(registry_path, dtype=str)
+        if registry_path.exists()
+        else pd.DataFrame(columns=["gauge_name", "gauge_id"])
+    )
+    known = dict(zip(registry["gauge_name"], registry["gauge_id"], strict=True))
+
+    new = sorted(set(names) - set(known))
+    if new:
+        used = {int(i.removeprefix(prefix)) for i in known.values()}
+        candidate = 1
+        for name in new:
+            while candidate in used:
+                candidate += 1
+            known[name] = f"{prefix}{candidate:0{zfill}d}"
+            used.add(candidate)
+        (
+            pd.DataFrame(sorted(known.items()), columns=["gauge_name", "gauge_id"])
+            .to_csv(registry_path, index=False)
+        )
+        print(f"gauge_id registry: added {len(new)} station(s): {', '.join(new)}")
+
+    return [known[name] for name in names]

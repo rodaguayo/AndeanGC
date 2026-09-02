@@ -110,3 +110,30 @@ def test_process_excel_files_on_no_input_returns_empty_frames():
 
     assert metadata.empty
     assert timeseries.empty
+
+
+def test_registry_ids_survive_a_renumbered_download(tmp_path):
+    """The bug: ids came from DatosSerie(N).xlsx, so re-downloading renumbered gauges."""
+    registry = tmp_path / "registry.csv"
+    registry.write_text("gauge_name,gauge_id\nCondorcerro,P00000008\nOcona,P00000040\n")
+
+    # Same stations, read back in a different order — ids must not move.
+    assert data_homogenize.assign_gauge_ids(
+        ["Ocona", "Condorcerro"], registry, "P", 8) == ["P00000040", "P00000008"]
+
+
+def test_registry_assigns_the_lowest_free_id_and_records_it(tmp_path):
+    registry = tmp_path / "registry.csv"
+    registry.write_text("gauge_name,gauge_id\nCondorcerro,P00000002\n")
+
+    got = data_homogenize.assign_gauge_ids(["Zulia", "Condorcerro", "Ancash"], registry, "P", 8)
+    # New names are numbered in sorted order, skipping the taken 2, and persisted.
+    assert got == ["P00000003", "P00000002", "P00000001"]
+    assert registry.read_text().splitlines()[1:] == [
+        "Ancash,P00000001", "Condorcerro,P00000002", "Zulia,P00000003"]
+
+
+def test_registry_is_created_when_absent(tmp_path):
+    registry = tmp_path / "new.csv"
+    assert data_homogenize.assign_gauge_ids(["B", "A"], registry, "P", 8) == ["P00000002", "P00000001"]
+    assert registry.exists()
