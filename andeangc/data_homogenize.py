@@ -1,12 +1,14 @@
 """Parse the raw exports into tidy frames (notebook 01).
 
-One workbook per gauge, in the layout the ANA portal produces: a metadata block
-in the first rows, then a year x day table with one column per month. The field
-labels vary between exports (accented or not, Spanish or English), so
-`extract_metadata` matches on substrings rather than fixed cell positions.
+Two providers ship one workbook per gauge, in two different layouts, and both parsers
+here report and skip a workbook they cannot read rather than aborting the batch:
 
-`process_excel_files` is the entry point; it skips workbooks that fail to parse
-rather than aborting the batch.
+- SENAMHI, through the ANA portal: a metadata block in the first rows, then a year x day
+  table with one column per month. The field labels vary between exports (accented or not,
+  Spanish or English), so `extract_metadata` matches on substrings rather than fixed cell
+  positions. `process_excel_files` is the entry point.
+- SNHI: a two-column daily table under a title row that carries the station number.
+  `read_snhi_files` is the entry point, and returns the batch already keyed by `gauge_id`.
 
 `format_gauge_ids`, `stamp_gauge_ids` and `assign_gauge_ids` are the tail of
 homogenisation and serve every source, including the two this module does not parse:
@@ -14,6 +16,7 @@ nb01 stamps CAMELS-CL with them so that all four sources reach the merge in nb03
 already keyed by `gauge_id`.
 """
 
+import re
 from collections.abc import Sequence
 from pathlib import Path
 
@@ -184,6 +187,44 @@ def process_excel_files(file_paths: Sequence[Path]) -> tuple[pd.DataFrame, pd.Da
         timeseries_df = pd.DataFrame()
     
     return metadata_df, timeseries_df
+
+def read_snhi_files(file_paths: Sequence[Path], prefix: str, zfill: int) -> pd.DataFrame:
+    """Read the SNHI daily-flow workbooks into one wide frame, keyed by `gauge_id`.
+
+    Each export is a two-column table (timestamp, mean daily flow) under a title row
+    that reads `Datos Historicos - Estacion 1001 - Vinchina - Vinchina`. That title is
+    the only place the station number appears — the file name does not carry it — so a
+    workbook whose title does not match is reported and skipped rather than landing in
+    the frame under a placeholder id.
+
+    Timestamps are truncated to the day and the first record of a repeated day wins,
+    matching `process_excel_files`: one column per gauge, one row per date.
+    """
+    series = []
+
+    for file_path in tqdm(file_paths, desc="Reading SNHI workbooks"):
+        title = pd.read_excel(file_path, nrows=1).columns[0]
+        match = re.search(r"Estacion (\d+)", title)
+        if match is None:
+            print(f"No station number in {Path(file_path).name}: skipped")
+            continue
+        gauge_id = format_gauge_ids([match.group(1)], prefix, zfill)[0]
+
+        table = pd.read_excel(file_path, header=1)
+        dates = pd.to_datetime(table["Fecha y Hora"], format="%d/%m/%Y %H:%M", errors="coerce").dt.normalize()
+        flow = pd.to_numeric(table["Caudal Medio Diario [m3/seg]"], errors="coerce")
+
+        gauge = pd.Series(flow.to_numpy(), index=pd.DatetimeIndex(dates), name=gauge_id)
+        gauge = gauge[gauge.index.notna()]
+        series.append(gauge[~gauge.index.duplicated(keep="first")])
+
+    if not series:
+        return pd.DataFrame()
+
+    data = pd.concat(series, axis=1, sort=False).sort_index()
+    data.index.name = "date"
+    return data
+
 
 def format_gauge_ids(codes: Sequence[str | int], prefix: str, zfill: int) -> list[str]:
     """Give bare institutional station codes their Andean-GC gauge_id form.
