@@ -7,6 +7,11 @@ labels vary between exports (accented or not, Spanish or English), so
 
 `process_excel_files` is the entry point; it skips workbooks that fail to parse
 rather than aborting the batch.
+
+`format_gauge_ids`, `stamp_gauge_ids` and `assign_gauge_ids` are the tail of
+homogenisation and serve every source, including the two this module does not parse:
+nb01 stamps CAMELS-CL with them so that all four sources reach the merge in nb03
+already keyed by `gauge_id`.
 """
 
 from collections.abc import Sequence
@@ -180,6 +185,40 @@ def process_excel_files(file_paths: Sequence[Path]) -> tuple[pd.DataFrame, pd.Da
     
     return metadata_df, timeseries_df
 
+def format_gauge_ids(codes: Sequence[str | int], prefix: str, zfill: int) -> list[str]:
+    """Give bare institutional station codes their Andean-GC gauge_id form.
+
+    CAMELS-CL and the DGA parquet arrive keyed by the bare numeric DGA station
+    code; the published join key is that code behind a country prefix, zero-padded
+    to a fixed width (`gauge_id_prefix_*` / `gauge_id_zfill` in config.yml). This
+    is the only place that spelling exists, so a change to those keys reaches every
+    source.
+    """
+    return [f"{prefix}{int(code):0{zfill}d}" for code in codes]
+
+
+def stamp_gauge_ids(table: pd.DataFrame, prefix: str, zfill: int,
+                    source_column: str = "gauge_id_source") -> pd.DataFrame:
+    """Re-key a provider table by `gauge_id`, keeping the institutional code beside it.
+
+    CAMELS-CL is distributed keyed by the bare DGA station code, and nb01 rewrites
+    its metadata and basins in place under the provider's own filenames. Dropping
+    the bare code would make that rewrite one-way: a second run would try to stamp
+    ids that are already stamped, and `int("X01001001")` raises.
+
+    So the original key is kept as `gauge_id_source` and the prefixed key is built
+    from it, first column. A re-run rebuilds `gauge_id` from that column and is a
+    no-op, which is what lets `pixi run pipeline` run twice.
+    """
+    table = table.copy()
+    if source_column in table:
+        table = table.drop(columns="gauge_id", errors="ignore")   # a re-run: rebuild from source
+    else:
+        table = table.rename(columns={"gauge_id": source_column})
+    table.insert(0, "gauge_id", format_gauge_ids(table[source_column], prefix, zfill))
+    return table
+
+
 def assign_gauge_ids(
     names: Sequence[str],
     registry_path: Path,
@@ -226,11 +265,13 @@ def assign_gauge_ids(
     if new:
         used = {int(i.removeprefix(prefix)) for i in known.values()}
         candidate = 1
-        for name in new:
+        numbers = []
+        for _ in new:
             while candidate in used:
                 candidate += 1
-            known[name] = f"{prefix}{candidate:0{zfill}d}"
+            numbers.append(candidate)
             used.add(candidate)
+        known.update(zip(new, format_gauge_ids(numbers, prefix, zfill), strict=True))
         (
             pd.DataFrame(sorted(known.items()), columns=["gauge_name", "gauge_id"])
             .to_csv(registry_path, index=False)

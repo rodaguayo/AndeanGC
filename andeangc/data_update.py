@@ -10,13 +10,17 @@ from pathlib import Path
 
 import pandas as pd
 
+from andeangc import config as cfg
+from andeangc import data_homogenize
+
 
 def update_camels_cl_data(original_file: str | Path, updated_parquet: str | Path,
                           output_file: str | Path) -> pd.DataFrame:
     """Update CAMELS_CL daily data by combining historical and recent data.
 
-    Gauge ids in the DGA export are bare station codes, matching CAMELS-CL's
-    own columns; see `update_pmet_data` for the prefixed variant.
+    Both inputs are keyed by the bare DGA station code, so the merge happens on
+    bare codes and the output is stamped with the Andean-GC `gauge_id` prefix on
+    the way out — CAMELS-CL is the last source that reached nb03 unkeyed.
     """
     original_data = pd.read_csv(original_file, index_col='date', parse_dates=['date'])
     original_data = original_data.reindex(pd.date_range(start=original_data.index.min(), end='2025-12-31', freq='D'))
@@ -38,6 +42,8 @@ def update_camels_cl_data(original_file: str | Path, updated_parquet: str | Path
     # merging
     final_data = original_data.combine_first(updated_data)
     final_data = final_data.round(3)
+    final_data.columns = data_homogenize.format_gauge_ids(
+        final_data.columns, cfg.gauge_id_prefix_arcl, cfg.gauge_id_zfill)
     final_data.to_csv(output_file, index_label='date')
     return final_data
 
@@ -63,7 +69,8 @@ def update_pmet_data(original_file: str | Path, updated_cl_file: str | Path,
 
     # Load and pivot updated Chile data
     updated_data_cl = pd.read_parquet(updated_cl_file)[['CODIGO ESTACION', 'FECHA', 'Caudal_diario']]
-    updated_data_cl["CODIGO ESTACION"] = ['X' + str(i).zfill(8) for i in updated_data_cl["CODIGO ESTACION"]]
+    updated_data_cl["CODIGO ESTACION"] = data_homogenize.format_gauge_ids(
+        updated_data_cl["CODIGO ESTACION"], cfg.gauge_id_prefix_arcl, cfg.gauge_id_zfill)
     updated_data_cl = updated_data_cl.drop_duplicates(subset=['FECHA', 'CODIGO ESTACION'], keep='first')
     updated_data_cl = updated_data_cl.pivot(index='FECHA', columns='CODIGO ESTACION', values='Caudal_diario')
     updated_data_cl.index = pd.to_datetime(updated_data_cl.index, format='%d/%m/%Y')
