@@ -1,7 +1,8 @@
-"""The two parsers that make sense of the raw ANA/SENAMHI workbooks.
+"""The parsers that make sense of the raw provider workbooks.
 
-Both are exercised on synthetic workbooks in the layout the ANA portal produces,
-so these tests need no access to the real data.
+Each is exercised on synthetic workbooks in the layout its provider produces — the
+ANA portal for SENAMHI, the SNHI export for Argentina — so these tests need no
+access to the real data.
 """
 
 import pandas as pd
@@ -138,3 +139,117 @@ def test_missing_registry_raises_rather_than_renumbering(tmp_path):
     """The registry is not in git, so absent means lost — never a licence to reassign ids."""
     with pytest.raises(FileNotFoundError, match="renumber every Peruvian gauge"):
         data_homogenize.assign_gauge_ids(["A"], tmp_path / "gone.csv", "P", 8)
+
+
+def test_bare_station_codes_become_gauge_ids():
+    """The one spelling of the join key: prefix, zero-padded to a fixed width. Codes
+    reach it as ints (the DGA parquet), as strings (a CSV header) and already at full
+    width — all three must land on the same id."""
+    assert data_homogenize.format_gauge_ids([101, "101"], "X", 8) == ["X00000101", "X00000101"]
+    assert data_homogenize.format_gauge_ids([12345678], "X", 8) == ["X12345678"]
+    assert data_homogenize.format_gauge_ids([7], "P", 8) == ["P00000007"]
+
+
+def test_an_id_that_already_carries_a_prefix_is_re_keyed():
+    """Sources reach the join in three states, and all three must land on the same id.
+    Re-stamping with the same prefix is a no-op, so `pixi run pipeline` runs twice; with
+    another prefix it re-keys, which is how PMET-obs's published series and the Argentine
+    file nb01 has just written reach one id space in `update_pmet_data`."""
+    assert data_homogenize.format_gauge_ids(["X00000101"], "X", 8) == ["X00000101"]
+    assert data_homogenize.format_gauge_ids(["A00001807"], "M", 8) == ["M00001807"]
+    assert data_homogenize.format_gauge_ids([1807, "1807", "A00001807"], "M", 8) == ["M00001807"] * 3
+
+
+def test_a_code_that_arrived_as_a_decimal_raises():
+    """`str(i).zfill(8)` would emit X001234.0 here — an id that joins to nothing."""
+    with pytest.raises(ValueError):
+        data_homogenize.format_gauge_ids(["1234.0"], "X", 8)
+
+
+def test_a_provider_table_is_rekeyed_and_keeps_the_institutional_code():
+    table = pd.DataFrame({"gauge_id": [1001001, 12345678], "gauge_name": ["A", "B"]})
+
+    got = data_homogenize.stamp_gauge_ids(table, "X", 8)
+
+    assert list(got.columns) == ["gauge_id", "gauge_id_source", "gauge_name"]
+    assert list(got.gauge_id) == ["X01001001", "X12345678"]
+    assert list(got.gauge_id_source) == [1001001, 12345678]
+
+
+def test_stamping_an_already_stamped_table_is_a_no_op():
+    """nb01 rewrites the CAMELS files under their own names, so `pixi run pipeline`
+    stamps them again on the next run. Without gauge_id_source that raises."""
+    table = pd.DataFrame({"gauge_id": [1001001], "gauge_name": ["A"]})
+
+    once = data_homogenize.stamp_gauge_ids(table, "X", 8)
+    twice = data_homogenize.stamp_gauge_ids(once, "X", 8)
+
+    pd.testing.assert_frame_equal(once, twice)
+
+
+def write_snhi_workbook(path, title, rows):
+    """Write a workbook in the SNHI layout: a title row, then a two-column daily table.
+
+    The title is the only place the station number appears; the table header sits on
+    row 1, the offset `read_snhi_files` assumes.
+    """
+    frame = pd.DataFrame(rows, columns=["Fecha y Hora", "Caudal Medio Diario [m3/seg]"])
+    with pd.ExcelWriter(path) as writer:
+        pd.DataFrame([[title, None]]).to_excel(writer, index=False, header=False, startrow=0)
+        frame.to_excel(writer, index=False, startrow=1)
+    return path
+
+
+def test_snhi_station_number_comes_from_the_title_row(tmp_path):
+    """The file name carries no code, so the title row is the only source of the id."""
+    path = write_snhi_workbook(
+        tmp_path / "Historicos-Estacion 1001.xlsx",
+        "Datos Historicos - Estacion 1001 - Vinchina - Vinchina",
+        [["01/09/2016 05:00", 0.23], ["02/09/2016 05:00", 0.18]])
+
+    data = data_homogenize.read_snhi_files([path], "X", 8)
+
+    assert list(data.columns) == ["X00001001"]
+    assert data.index.name == "date"
+    assert list(data.index) == [pd.Timestamp("2016-09-01"), pd.Timestamp("2016-09-02")]
+    assert list(data["X00001001"]) == [0.23, 0.18]
+
+
+def test_snhi_days_are_truncated_and_the_first_record_of_a_day_wins(tmp_path):
+    """The export is timestamped, the dataset is daily: two records on one day is one row."""
+    path = write_snhi_workbook(
+        tmp_path / "Estacion.xlsx", "Estacion 7 - Rio - Lugar",
+        [["01/09/2016 05:00", 1.0], ["01/09/2016 17:00", 99.0], ["02/09/2016 05:00", 2.0]])
+
+    data = data_homogenize.read_snhi_files([path], "X", 8)
+
+    assert list(data["X00000007"]) == [1.0, 2.0]
+
+
+def test_snhi_unreadable_dates_and_flows_do_not_reach_the_frame(tmp_path):
+    """A missing flow must be NaN on its date; a row with no usable date must be dropped."""
+    path = write_snhi_workbook(
+        tmp_path / "Estacion.xlsx", "Estacion 7 - Rio - Lugar",
+        [["01/09/2016 05:00", "s/d"], ["sin fecha", 5.0], ["03/09/2016 05:00", 3.0]])
+
+    data = data_homogenize.read_snhi_files([path], "X", 8)
+
+    assert list(data.index) == [pd.Timestamp("2016-09-01"), pd.Timestamp("2016-09-03")]
+    assert data["X00000007"].isna().sum() == 1
+
+
+def test_snhi_workbook_without_a_station_number_is_skipped_not_guessed(tmp_path):
+    """An unidentified workbook used to land in the frame as an "UNKNOWN" column, which
+    a second one would then duplicate. Losing it loudly is the lesser evil."""
+    named = write_snhi_workbook(tmp_path / "a.xlsx", "Estacion 12 - Rio - Lugar",
+                                [["01/09/2016 05:00", 1.0]])
+    unnamed = write_snhi_workbook(tmp_path / "b.xlsx", "Datos Historicos",
+                                  [["01/09/2016 05:00", 2.0]])
+
+    data = data_homogenize.read_snhi_files([named, unnamed], "X", 8)
+
+    assert list(data.columns) == ["X00000012"]
+
+
+def test_snhi_on_no_input_returns_an_empty_frame():
+    assert data_homogenize.read_snhi_files([], "X", 8).empty
