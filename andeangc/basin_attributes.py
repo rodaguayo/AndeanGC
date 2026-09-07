@@ -178,3 +178,31 @@ def dam_attributes(shape: gpd.GeoDataFrame, capacity_threshold: float = 100) -> 
     shape = shape.join(counts.rename("dams_count"))
     shape["dams_count"] = shape["dams_count"].fillna(0)
     return shape
+
+
+def lai_attributes(shape: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+    """Leaf area index seasonality per basin: the annual maximum and its amplitude.
+
+    The source is the monthly LAI climatology, one band per month, so the two
+    CAMELS vegetation attributes (Addor et al. 2017) are a max and a range over
+    the twelve basin means: `lai_max` is the largest, `lai_diff` the largest
+    minus the smallest.
+
+    Basins the source never retrieves get NaN, not zero. GIMMS LAI4g masks
+    barren surfaces — the Atacama and the high central Andes — and "no LAI was
+    measured here" is a different statement from "the LAI here is zero", which
+    the grid also contains. Roughly 8% of the basins sit entirely inside that
+    mask.
+    """
+    lai = xr.open_dataset(cfg.data_dir('lai') / cfg.inputs['lai_climatology']).lai
+    lai = clip_to(lai.rename(lat="y", lon="x"), shape)
+
+    # One column per month, in the row order of `shape` — hence the positional
+    # assignment below, which holds whether the caller indexes by gauge_id
+    # (as `land_cover_attributes` leaves it) or by position.
+    months = exact_extract(lai.load(), shape, ["mean"], progress=False, output="pandas")
+
+    shape = shape.copy()
+    shape["lai_max"] = months.max(axis=1).to_numpy()
+    shape["lai_diff"] = (months.max(axis=1) - months.min(axis=1)).to_numpy()
+    return shape
