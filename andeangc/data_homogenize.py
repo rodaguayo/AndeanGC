@@ -227,15 +227,28 @@ def read_snhi_files(file_paths: Sequence[Path], prefix: str, zfill: int) -> pd.D
 
 
 def format_gauge_ids(codes: Sequence[str | int], prefix: str, zfill: int) -> list[str]:
-    """Give bare institutional station codes their Andean-GC gauge_id form.
+    """Give institutional station codes their Andean-GC gauge_id form.
 
-    CAMELS-CL and the DGA parquet arrive keyed by the bare numeric DGA station
-    code; the published join key is that code behind a country prefix, zero-padded
-    to a fixed width (`gauge_id_prefix_*` / `gauge_id_zfill` in config.yml). This
-    is the only place that spelling exists, so a change to those keys reaches every
-    source.
+    The published join key is the institutional station code behind a source prefix,
+    zero-padded to a fixed width (`gauge_id_prefix_*` / `gauge_id_zfill` in
+    config.yml). This is the only place that spelling exists, so a change to those
+    keys reaches every source.
+
+    Codes reach this in three states, and all three must land on the same id:
+
+    - bare, as the providers ship them — the DGA parquet (ints), the CAMELS-CL
+      header (strings);
+    - already carrying this prefix, because nb01 rewrites several files under their
+      own names and `pixi run pipeline` runs twice;
+    - carrying *another* prefix — PMET-obs's published series are keyed with the
+      prefix of the release they came from, and nb01 hands `update_pmet_data` an
+      `SNHI_data.csv` it has just keyed for Argentina. Those get re-keyed here.
+
+    So a leading run of letters is dropped and the numeric code restamped. What is
+    left must be a bare integer: a code that arrived as `1234.0` still raises rather
+    than becoming an id that joins to nothing.
     """
-    return [f"{prefix}{int(code):0{zfill}d}" for code in codes]
+    return [f"{prefix}{int(re.sub(r'^[A-Za-z]+', '', str(code).strip())):0{zfill}d}" for code in codes]
 
 
 def stamp_gauge_ids(table: pd.DataFrame, prefix: str, zfill: int,
@@ -244,12 +257,14 @@ def stamp_gauge_ids(table: pd.DataFrame, prefix: str, zfill: int,
 
     CAMELS-CL is distributed keyed by the bare DGA station code, and nb01 rewrites
     its metadata and basins in place under the provider's own filenames. Dropping
-    the bare code would make that rewrite one-way: a second run would try to stamp
-    ids that are already stamped, and `int("X01001001")` raises.
+    the bare code would make that rewrite one-way: the institutional code the
+    provider joins on would survive only inside the ids the pipeline derived from it.
 
     So the original key is kept as `gauge_id_source` and the prefixed key is built
     from it, first column. A re-run rebuilds `gauge_id` from that column and is a
-    no-op, which is what lets `pixi run pipeline` run twice.
+    no-op, which is what lets `pixi run pipeline` run twice — and keeps the id
+    following `gauge_id_prefix_*` when that key changes, rather than freezing the
+    spelling of the run that first stamped the file.
     """
     table = table.copy()
     if source_column in table:
