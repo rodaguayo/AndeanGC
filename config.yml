@@ -1,63 +1,119 @@
-# Root directory containing external datasets (DEM, GLACIERS, ADMIN, ERA5, etc.)
+# Root directory containing external datasets to characterize basins (DEM, GLACIERS, ADMIN, ERA5, etc.).
 data_root: /home/rooda/Datasets
 
-# Coordinate reference systems
-epsg_utm: 32719
-epsg_wgs84: 4326
-epsg_utm_18s: 32718
-
-# Periods
-period_q: ["1950", "2024"]
-period_climate: ["1960", "2024"]
-period_ref_climate: ["1990-01-01", "2019-12-31"]
-
-# RGI version
-rgi_version: "RGI60"
-
-# DEM
-dem_resolution: 90
-
-# Data subdirectories (relative to data_root)
-dirs:
-  glaciers: "GLACIERS"
-  dem: "DEM"
-  era5: "ERA5"
-  land_cover: "LAND_COVER"
-  admin: "ADMIN"
-
-# Glacier/oherence thresholds
-glacier_threshold: 0.1
-
-# Quality control
-min_data_days: 365
-interpolation_limit: 2
-qc_window: "30D"
-qc_constant_threshold: 0.001
-qc_stations_to_remove:
-  - "X00001001"
-  - "X00001219"
-  - "X00002230"
-  - "X00002298"
-  - "X01021002"
-  - "X03041003"
-  - "X03041004"
-  - "X03041005"
-  - "X03430002"
-  - "X03450001"
-  - "X03453001"
-  - "X03825001"
-  - "X03826001"
-  - "X05423005"
-  - "X05703006"
-  - "X07306001"
-  - "X08312000"
-  - "X08386001"
-  - "X11500002"
+# Project data, versioned. Everything this pipeline writes lives under
+# data/<version>/: the published artifacts sit directly in that folder, with
+# climate/ and figures/ beside them.
+version: "v11"
 
 # Gauge ID formatting
 gauge_id_zfill: 8
 gauge_id_prefix_pe: "P"
-gauge_id_prefix_arcl: "X"
+gauge_id_prefix_ar: "A"
+gauge_id_prefix_cl: "C"
+gauge_id_prefix_pa: "M"
 
-# Infrastructure
-dam_capacity_threshold: 100
+# Periods (full ISO dates)
+period_q: ["1950-01-01", "2024-12-31"]
+period_climate: ["1960-01-01", "2025-12-31"] 
+period_ref_climate: ["1990-01-01", "2019-12-31"]
+
+# RGI version + glacier thresholds
+rgi_version: "RGI60"
+glacier_threshold: 0.1
+
+# DEM
+dem_resolution: 90
+
+# Top-level data directories (relative to data_root)
+dirs:
+  dem: "dem"
+  era5: "era5"
+  cmip6: "cmip6"
+  land_cover: "land_cover"
+  admin: "admin"
+  dams: "dams"
+  glacier_dhdt: "glacier_dhdt"
+  glacier_outlines: "glacier_outlines"
+  glacier_thickness: "glacier_thickness"
+
+# Raw inputs, each relative to the `dirs` entry named in its comment. These are
+# the names in the external archive, so they carry the span the data was
+# downloaded with — not `period_climate` / `period_q`, which stamp the outputs.
+inputs:
+  dem_attributes: "DEM_Andes_270m.tif"                      # dirs.dem               — Andes-wide DEM, attributes (06)
+  land_cover: "GLOBAL/PROBAV_LC100_global_v3.0.1_2019.tif"  # dirs.land_cover
+  dams: "GDAT_V1_DAMS.gpkg"                                 # dirs.dams
+  era5: "{variable}_ERA5_1960_2025.nc"                      # dirs.era5              — one file per variable (06, 07)
+
+# Glacier mosaics read by 06_basins_attributes.ipynb. 
+outputs:
+  glacier_dhdt: "dhdt_2000_2020_hugonnet.tif"                # -> dirs.glacier_dhdt
+  glacier_volume_millan: "volume_millan_2022_100m.tif"       # -> dirs.glacier_thickness
+  glacier_volume_farinotti: "volume_Farinotti_2019_200m.tif" # -> dirs.glacier_thickness
+
+# Basin delineation
+snap_dist: 20         # pour-point snap distance to nearest stream
+stream_threshold: 3   # min contributing area for stream extraction (not cells)
+
+# Quality control and filtering
+
+## Dataset filtering. Gauge names matching any of these are dropped as intervened. 
+intervention_keywords:
+  - "Embalse"
+  - "Boca Toma"
+  - "Central"
+  - "Presa"
+  - "Canal"
+
+## Stations to remove. Ids carry their source prefix (gauge_id_prefix_*): a stale prefix
+## here matches nothing and the station is silently kept, so nb05 reports any id it cannot find.
+qc_stations_to_remove:
+  - "A00001001"
+  - "A00001219"
+  - "A00002230"
+  - "A00002298"
+  - "C01021002"
+  - "C03041003"
+  - "C03041004"
+  - "C03041005"
+  - "C03430002"
+  - "C03450001"
+  - "C03453001"
+  - "C03825001"
+  - "C03826001"
+  - "C05423005"
+  - "C05703006"
+  - "C07306001"
+  - "C08312000"
+  - "C08386001"
+  - "C11500002"
+
+senamhi_stations_to_remove:
+  - "Alpas"
+  - "Querococha"
+  - "Paron"
+  - "Balsa"
+  - "Los Cedros"
+  - "Chuquicara"
+
+## Quality control
+min_data_days: 365
+interpolation_limit: 2
+qc_window: "30D"
+qc_constant_threshold: 0.001
+qc_min_periods: 30        # min samples before flagConstants fires
+qc_group_window: "10D"    # flagIsolated: max width of an isolated group
+qc_range_quantile: 0.99   # flagRange upper bound = this quantile ...
+qc_range_factor: 6        # ... times this factor
+
+## Hydrological signatures. The austral hydrological year runs April-March
+water_year_start_month: 4
+sig_min_coverage: 0.9         # fraction of days a water year needs to count as complete
+sig_min_years: 5              # complete water years below which a gauge gets no signatures
+sig_bfi_alpha: 0.925          # Lyne-Hollick filter parameter (Ladson et al. 2013)
+sig_bfi_passes: 3             # forward, backward, forward
+sig_high_flow_factor: 9       # high flow = Q > this x the median daily flow
+sig_low_flow_factor: 0.2      # low flow  = Q < this x the mean daily flow
+sig_fdc_percentiles: [0.33, 0.66]   # log-flow percentiles bounding the FDC slope
+sig_recession_min_length: 5   # consecutive declining days before a spell counts as a recession

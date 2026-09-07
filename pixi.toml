@@ -64,15 +64,17 @@ check-notebooks = "nbstripout --verify processing/*.ipynb figures/*.ipynb"
 # ship. Run once after `pixi install` to enable fig.write_image in figures/.
 get-chrome = "plotly_get_chrome -y"
 
-# The pipeline itself
+# The pipeline itself. The stage order lives here, where it is enforced;
+# tools/run_pipeline.py only executes what it is handed, in the order given.
 [tasks.pipeline]
 cmd = """
-jupyter nbconvert --to notebook --execute --ExecutePreprocessor.timeout=-1 --output-dir temp/pipeline processing/01_data_preprocessing.ipynb && \
-jupyter nbconvert --to notebook --execute --ExecutePreprocessor.timeout=-1 --output-dir temp/pipeline processing/02_basins_delineation.ipynb && \
-jupyter nbconvert --to notebook --execute --ExecutePreprocessor.timeout=-1 --output-dir temp/pipeline processing/03_dataset_merging.ipynb && \
-jupyter nbconvert --to notebook --execute --ExecutePreprocessor.timeout=-1 --output-dir temp/pipeline processing/04_dataset_filtering.ipynb && \
-jupyter nbconvert --to notebook --execute --ExecutePreprocessor.timeout=-1 --output-dir temp/pipeline processing/05_streamflow_qc.ipynb && \
-jupyter nbconvert --to notebook --execute --ExecutePreprocessor.timeout=-1 --output-dir temp/pipeline processing/06_basins_attributes.ipynb && \
-jupyter nbconvert --to notebook --execute --ExecutePreprocessor.timeout=-1 --output-dir temp/pipeline processing/07_basins_climate.ipynb && \
-jupyter nbconvert --to notebook --execute --ExecutePreprocessor.timeout=-1 --output-dir temp/pipeline processing/08_hydro_signatures.ipynb\
+python tools/run_pipeline.py \
+  processing/01_data_preprocessing.ipynb \
+  processing/02_basins_delineation.ipynb \
+  processing/03_dataset_merging.ipynb \
+  processing/04_dataset_filtering.ipynb \
+  processing/05_streamflow_qc.ipynb \
+  processing/06_basins_attributes.ipynb \
+  processing/07_basins_climate.ipynb \
+  processing/08_hydro_signatures.ipynb\
 """
