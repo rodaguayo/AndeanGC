@@ -21,46 +21,41 @@ Additional data sources:
 
 ## Workflow
 
-The data processing pipeline consists of eight notebooks in the [`processing/`](processing/) folder:
+The data processing pipeline consists of seven notebooks in the [`processing/`](processing/) folder, run in order:
 
 - [`01_data_preprocessing.ipynb`](processing/01_data_preprocessing.ipynb): Cleans, standardizes and updates raw institutional streamflow data (SENAMHI, SNHI, CAMELS-CL, PMETobs)
 - [`02_basins_delineation.ipynb`](processing/02_basins_delineation.ipynb): Delineates drainage basins from gauge coordinates using FABDEM and WhiteboxTools; converts basins to vector
 - [`03_dataset_merging.ipynb`](processing/03_dataset_merging.ipynb): Merges standardized datasets and assembles the unified AndeanGC metadata, timeseries, and basin geometries
 - [`04_dataset_filtering.ipynb`](processing/04_dataset_filtering.ipynb): Applies selection and quality filters (glacier coverage > 0.1%, data length, intervention keywords) and saves the cleaned dataset
 - [`05_streamflow_qc.ipynb`](processing/05_streamflow_qc.ipynb): Performs automatic and visual/manual quality check on streamflow time series using `saqc`
-- [`06_basins_attributes.ipynb`](processing/06_basins_attributes.ipynb): Extracts multiple basin attributes (topographic, climatic, glacier, land cover, dams)
+- [`06_basins_attributes.ipynb`](processing/06_basins_attributes.ipynb): Extracts multiple basin attributes (topographic, climatic, glacier, land cover, dams, leaf area index)
 - [`07_basins_climate.ipynb`](processing/07_basins_climate.ipynb): Processes historical climate time series from ERA5 reanalysis for selected basins
+- [`08_hydro_signatures.ipynb`](processing/08_hydro_signatures.ipynb): Computes the CAMELS hydrological signature set per catchment from the QC'd streamflow and the ERA5 precipitation
+
+Stage order matters: notebooks 03–06 read and overwrite the same three artifacts in place, so
+re-running an earlier stage after a later one desynchronises the metadata from the timeseries.
+`pixi run pipeline` executes all in order.
 
 ## Repository structure
 
 ```
 ├── data/                  # Data — NOT in git (OneDrive backup, Zenodo release)
 │   ├── resources/         #   institutional streamflow data, shared by all versions
-│   └── v10/               #   one folder per dataset version (v10, v11, ...)
-│       ├── AndeanGC_data_1950_2024.csv     # published dataset
-│       ├── AndeanGC_data_1950_2024_qc.csv
-│       ├── AndeanGC_metadata.csv
-│       ├── AndeanGC_shape.gpkg
-│       ├── climate/       #     historical/ (ERA5) and future/ (CMIP6) time series
-│       ├── figures/       #     generated plots
-│       ├── dataset_version.yml  # manifest for this version
-│       └── README_zenodo.md     # Zenodo record for this version
+│   │   └── gauge_ids_peru.csv  # permanent gauge_id per SENAMHI station — never renumber
+│   └── vXX/               #   one folder per dataset version (v10, v11, ...)
 ├── figures/               # Jupyter notebooks that produce the plots
 ├── processing/            # Jupyter notebooks (data processing pipeline)
 ├── andeangc/              # Utility functions (installed package)
-│   ├── config.py          #   Resolve config.yml keys and data paths
-│   ├── data_homogenize.py #   Parse raw SENAMHI Excel files
-│   ├── data_update.py     #   Extend datasets with recent records
-│   ├── basin_delineation.py #  WhiteboxTools delineation pipeline (nb02)
-│   ├── basin_attributes.py #  Topographic, glacier, land cover and dam attributes (nb06)
-│   └── polygon_extract.py #   Zonal raster statistics and time series extraction
 ├── pixi.toml              # Pixi project manifest (conda-forge + pip)
 ├── pixi.lock              # Pixi lockfile (auto-generated)
 ├── pyproject.toml         # Project metadata and pip dependencies
+├── config.yml             # Paths, periods and thresholds for the whole pipeline
+├── CITATION.cff           # Machine-readable citation metadata
+├── CHANGELOG.md           # What changed between published dataset versions
+├── tests/                 # Unit tests for the helper modules
+├── .gitattributes         # nbstripout filter: notebooks commit without outputs
+└── .github/workflows/     # CI: lint, tests, notebook check
 ```
-
-Historical data includes ERA5 (1960–2024). CMIP6 climate projections are available upon request. The `data/` tree is deliberately outside git: it is published to Zenodo, while git tracks only the code that produces it.
-
 
 ## Getting started
 
@@ -74,8 +69,10 @@ pixi shell
 If you use this dataset, please cite:
 
 ```
-Aguayo, R. Andean Glacierized Catchment (Andean-GC) dataset. https://doi.org/10.5281/zenodo.18035801 (2026).
+Aguayo, R., Zekollari, H., van Tiel, M., Bolibar, J., Van Tricht, L., Ayala Ramos, A. I., & Ultee, L. (2026). Andean Glacierized Catchment (Andean-GC) dataset (Version v1) [Data set]. Zenodo. https://doi.org/10.5281/zenodo.18035801
 ```
+
+Machine-readable metadata is in [CITATION.cff](CITATION.cff); GitHub renders it as the "Cite this repository" button and can export BibTeX or APA from it.
 
 ## License
 
