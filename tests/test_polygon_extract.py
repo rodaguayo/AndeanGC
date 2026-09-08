@@ -15,6 +15,7 @@ import geopandas as gpd
 import numpy as np
 import pandas as pd
 import pytest
+import rioxarray  # noqa: F401  # registers the .rio accessor used by grid()
 import xarray as xr
 from shapely.geometry import box
 
@@ -99,3 +100,41 @@ def test_the_cache_is_bounded():
         polygon_extract.extract_timeseries(shifted, basins())
 
     assert len(polygon_extract._WEIGHTMAP_CACHE) == polygon_extract._WEIGHTMAP_CACHE_SIZE
+
+
+def grid(values=((0.0, 1.0), (2.0, 3.0))):
+    """A (lat, lon) raster over the same extent, north-up: top row first."""
+    raster = xr.DataArray(np.array(values), name="elev", dims=("lat", "lon"),
+                          coords={"lat": [1.5, 0.5], "lon": [10.5, 11.5]})
+    return raster.rio.set_spatial_dims(x_dim="lon", y_dim="lat").rio.write_crs("EPSG:4326")
+
+
+def test_attributes_are_keyed_by_gauge_id_not_by_row_order():
+    """A is the bottom-left pixel, B the top-right one."""
+    out = polygon_extract.extract_attributes(grid(), basins(), "elev_mean")
+
+    assert out["elev_mean"].tolist() == [2.0, 1.0]
+
+    reversed_rows = basins().iloc[::-1]
+    out = polygon_extract.extract_attributes(grid(), reversed_rows, "elev_mean")
+    assert out["elev_mean"].tolist() == [1.0, 2.0]
+
+
+def test_an_attribute_the_basins_already_carry_is_recomputed_in_place():
+    """nb06 reads back the shapefile it wrote, so on a re-run every column is already there."""
+    first = polygon_extract.extract_attributes(grid(), basins(), "elev_mean")
+    second = polygon_extract.extract_attributes(grid(((10.0, 11.0), (12.0, 13.0))), first, "elev_mean")
+
+    assert list(second.columns) == list(first.columns)   # no elev_mean_x / elev_mean_y
+    assert second["elev_mean"].tolist() == [12.0, 11.0]  # the new run's values, not the old ones
+
+
+def test_a_basin_the_extraction_misses_reads_nan_rather_than_the_previous_value():
+    first = polygon_extract.extract_attributes(grid(), basins(), "elev_mean")
+
+    away = first.copy()
+    away.loc[0, "geometry"] = box(20.0, 20.0, 21.0, 21.0)   # A moved off the raster
+    out = polygon_extract.extract_attributes(grid(), away, "elev_mean")
+
+    assert np.isnan(out["elev_mean"].iloc[0])
+    assert out["elev_mean"].iloc[1] == 1.0

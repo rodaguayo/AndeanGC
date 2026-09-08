@@ -160,6 +160,22 @@ def test_an_id_that_already_carries_a_prefix_is_re_keyed():
     assert data_homogenize.format_gauge_ids([1807, "1807", "A00001807"], "M", 8) == ["M00001807"] * 3
 
 
+def test_the_bare_code_is_recovered_from_any_prefix():
+    """The merge in nb03 joins on the institutional record, not on the gauge_id spelling:
+    PMET-obs republishes DGA and RHN stations under their own codes, so C10432002 and
+    M10432002 are one gauge. Per-source prefixes stopped those ids from colliding, which
+    published 55 gauges twice in v11; the key that fixes it is built from this."""
+    assert data_homogenize.strip_gauge_prefix(["C10432002", "M10432002"]) == ["10432002"] * 2
+    assert data_homogenize.strip_gauge_prefix(["A00001805", "M00001805"]) == ["1805"] * 2
+    assert data_homogenize.strip_gauge_prefix([1805, "1805"]) == ["1805", "1805"]
+
+
+def test_stripping_a_prefix_never_merges_two_countries():
+    """The code alone is not the key. Peruvian ids are registry numbers counting up from
+    1, so they will reach the Argentine code range; only (country, code) stays unique."""
+    assert data_homogenize.strip_gauge_prefix(["P00001805"]) == data_homogenize.strip_gauge_prefix(["A00001805"])
+
+
 def test_a_code_that_arrived_as_a_decimal_raises():
     """`str(i).zfill(8)` would emit X001234.0 here — an id that joins to nothing."""
     with pytest.raises(ValueError):
