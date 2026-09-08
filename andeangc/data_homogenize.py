@@ -248,7 +248,22 @@ def format_gauge_ids(codes: Sequence[str | int], prefix: str, zfill: int) -> lis
     left must be a bare integer: a code that arrived as `1234.0` still raises rather
     than becoming an id that joins to nothing.
     """
-    return [f"{prefix}{int(re.sub(r'^[A-Za-z]+', '', str(code).strip())):0{zfill}d}" for code in codes]
+    return [f"{prefix}{int(code):0{zfill}d}" for code in strip_gauge_prefix(codes)]
+
+
+def strip_gauge_prefix(codes: Sequence[str | int]) -> list[str]:
+    """Recover the bare institutional station code behind an Andean-GC gauge_id.
+
+    The inverse of the stamping `format_gauge_ids` does, and its other half: the
+    regex that decides what counts as a prefix lives here, so the two cannot drift.
+    Codes that never carried a prefix pass through unchanged, which is what lets a
+    caller mix ids and raw provider codes in one list.
+
+    nb03 needs this because the join key of the *merge* is not the gauge_id: PMET-obs
+    republishes DGA and RHN stations under their own institutional codes, so the same
+    gauge arrives twice under two source prefixes that no longer collide.
+    """
+    return [str(int(re.sub(r"^[A-Za-z]+", "", str(code).strip()))) for code in codes]
 
 
 def stamp_gauge_ids(table: pd.DataFrame, prefix: str, zfill: int,
