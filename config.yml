@@ -13,13 +13,17 @@ gauge_id_prefix_ar: "A"
 gauge_id_prefix_cl: "C"
 gauge_id_prefix_pa: "M"
 
-# Periods (full ISO dates)
+# Periods (full ISO dates). period_ref_climate is the reference period every derived
+# attribute is computed over — the climate attributes in nb06 and the hydrological
+# signatures in nb08 — so an attribute and a signature describe the same years.
 period_q: ["1950-01-01", "2024-12-31"]
 period_climate: ["1960-01-01", "2025-12-31"] 
 period_ref_climate: ["1990-01-01", "2019-12-31"]
 
 # RGI version + glacier thresholds
-rgi_version: "RGI60"
+rgi_versions: ["RGI60", "RGI70"]  # glacier area computed as an attribute for each
+rgi_version: "RGI60"              # the one that filters basins (must be in rgi_versions)
+rgi_regions: [16, 17]             # RGI first-order regions covering the Andes
 glacier_threshold: 0.1
 
 # DEM
@@ -121,3 +125,4 @@ sig_high_flow_factor: 9       # high flow = Q > this x the median daily flow
 sig_low_flow_factor: 0.2      # low flow  = Q < this x the mean daily flow
 sig_fdc_percentiles: [0.33, 0.66]   # log-flow percentiles bounding the FDC slope
 sig_recession_min_length: 5   # consecutive declining days before a spell counts as a recession
+sig_rolling_window: 7         # centred window the annual flow extremes are picked from, in days
