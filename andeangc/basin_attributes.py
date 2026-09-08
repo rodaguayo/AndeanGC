@@ -1,7 +1,11 @@
 """Basin attributes from external rasters and vectors (notebook 06).
 
 Each function takes the basin GeoDataFrame and returns it with new columns
-attached, so they compose: ``shape = topographic_attributes(shape)``. The
+attached, so they compose: ``shape = topographic_attributes(shape)``.
+`glacier_cover` is the exception on both counts — it is called from notebook 04,
+where the glacier fraction is the filter that selects the basins, and it returns
+a bare Series because that notebook computes one per RGI version and names the
+columns itself. The
 climate attributes are deliberately absent — their definitions (precipitation
 concentration index, snow fraction, high/low precipitation frequency) are the
 substance of that step and stay visible in the notebook, which builds them on
@@ -154,6 +158,23 @@ def gleam_reference_stack(shape: gpd.GeoDataFrame | None = None,
     stack = xr.open_mfdataset(str(cfg.data_dir('gleam') / pattern))
     stack = stack.sel(time=slice(period[0], period[1])).rename(lat="y", lon="x")
     return clip_to(stack, shape) if shape is not None else stack
+
+
+def glacier_cover(shape: gpd.GeoDataFrame, rgi_version: str, epsg_utm: int = 32719) -> pd.Series:
+    """Glacier cover per basin, as a percentage of `basin_area`, from the RGI outlines.
+    
+    A basin that touches no outline gets 0, not NaN: an ice-free basin has a
+    glacier cover, and it is zero.
+    """
+    outlines = pd.concat([gpd.read_file(cfg.data_dir('glacier_outlines') / f"{rgi_version}_{region}.shp")
+                          for region in cfg.rgi_regions])
+    ice = outlines.union_all()
+
+    cover = pd.Series(0.0, index=shape.index)
+    touching = shape[shape.intersects(ice)]
+    glacier_area = touching.intersection(ice).to_crs(epsg=epsg_utm).area / 1e6  # UTM 19S, the Andes
+    cover.loc[touching.index] = glacier_area * 100 / touching.basin_area
+    return cover.fillna(0)
 
 
 def glacier_attributes(shape: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
