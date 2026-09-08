@@ -37,6 +37,7 @@ dirs:
   glacier_outlines: "glacier_outlines"
   glacier_thickness: "glacier_thickness"
   lai: "lai"
+  gleam: "gleam"
 
 # Raw inputs, each relative to the `dirs` entry named in its comment. These are
 # the names in the external archive, so they carry the span the data was
@@ -47,6 +48,7 @@ inputs:
   dams: "GDAT_V1_DAMS.gpkg"                                 # dirs.dams
   era5: "{variable}_ERA5_1960_2025.nc"                      # dirs.era5              — one file per variable (06, 07)
   lai_climatology: "GIMMS_LAI4g_V1.2_SA_1982_2020_climatology.nc"  # dirs.lai        — 12-month LAI climatology (06)
+  gleam: "{variable}_{year}_GLEAM_v4.3a_YR.nc"              # dirs.gleam            — one file per variable and year (06)
 
 # Glacier mosaics read by 06_basins_attributes.ipynb. 
 outputs:

@@ -40,7 +40,7 @@ LAND_COVER_CLASSES = {"forest_cover": 10,
 LAND_COVER_FOREST_RANGE = (100, 200)
 
 
-def clip_to(raster: xr.DataArray, shape: gpd.GeoDataFrame) -> xr.DataArray:
+def clip_to(raster: xr.DataArray | xr.Dataset, shape: gpd.GeoDataFrame) -> xr.DataArray | xr.Dataset:
     """Clip a raster to the bounding box of the basins.
 
     `total_bounds` is (minx, miny, maxx, maxy) while the rasters are stored
@@ -75,22 +75,39 @@ def geometry_attributes(shape: gpd.GeoDataFrame, epsg_utm: int = 32719) -> gpd.G
 def topographic_attributes(shape: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     """Elevation (mean, median, std), slope and aspect, from the Andes-wide DEM.
 
-    Slope is computed in UTM — it is meaningless in degrees — and reprojected
-    back; aspect is direction only, so it stays in lat/lon.
+    Slope and aspect are both computed in UTM and reprojected back: in degrees
+    the cell is not square away from the equator, so the two gradients are scaled
+    by different real distances — which inflates slope and tilts the direction
+    aspect points (xrspatial warns about exactly this).
+
+    Aspect is published as its two unit-vector components rather than as a mean
+    bearing, because bearings are circular: 359° and 1° are neighbours, and their
+    arithmetic mean is 180°, the exact opposite direction. `aspect_north` is the
+    basin mean of cos(aspect) and `aspect_east` the mean of sin(aspect), each in
+    [-1, 1] — +1 fully north- (east-) facing, -1 fully south- (west-) facing, and
+    ~0 either a basin with no preferred exposure or one facing across that axis.
+    Both are usable as-is in a regression, which a bearing is not, and the mean
+    bearing is recoverable as ``degrees(atan2(aspect_east, aspect_north)) % 360``.
+    Flat cells, which xrspatial marks -1, have no direction and are dropped rather
+    than counted as due north.
     """
     dem = xr.open_dataset(cfg.data_dir('dem') / cfg.inputs['dem_attributes']).band_data.sel(band=1, drop=True)
     dem = clip_to(dem, shape)
     dem = dem.fillna(0)  # NAs to sea level (= 0)
 
-    slope = xrs.slope(dem.rio.reproject("EPSG:32719"))  # UTM 19S, the Andes
-    slope = slope.rio.reproject("EPSG:4326")
-    aspect = xrs.aspect(dem)
+    dem_utm = dem.rio.reproject("EPSG:32719")  # UTM 19S, the Andes
+    slope = xrs.slope(dem_utm).rio.reproject("EPSG:4326")
+
+    aspect = np.deg2rad(xrs.aspect(dem_utm).where(lambda a: a >= 0))
+    northness = np.cos(aspect).rio.write_nodata(np.nan).rio.reproject("EPSG:4326")
+    eastness = np.sin(aspect).rio.write_nodata(np.nan).rio.reproject("EPSG:4326")
 
     shape = polygon_extract.extract_attributes(dem, shape, {"elev_mean": "mean",
                                                             "elev_median": "median",
                                                             "elev_std": "stdev"})
     shape = polygon_extract.extract_attributes(slope, shape, "slope_mean")
-    shape = polygon_extract.extract_attributes(aspect, shape, "aspect_mean")
+    shape = polygon_extract.extract_attributes(northness, shape, "aspect_north")
+    shape = polygon_extract.extract_attributes(eastness, shape, "aspect_east")
     return shape
 
 
@@ -111,6 +128,32 @@ def era5_reference_stack(period: Sequence[str] | None = None) -> xr.Dataset:
     stack = stack.sel(time=slice(period[0], period[1]))
     stack['tas'] = (stack.tasmax + stack['tasmin']) / 2
     return stack
+
+
+def gleam_reference_stack(shape: gpd.GeoDataFrame | None = None,
+                          period: Sequence[str] | None = None) -> xr.Dataset:
+    """GLEAM actual (`E`) and potential (`Ep`) evaporation over the reference period.
+
+    Left lazy, like `era5_reference_stack`, and for the same reason: what the
+    two evaporation attributes are is the notebook's business, not this
+    function's. The archive stores one file per variable and year, already
+    aggregated to annual totals in mm, so the stack comes back with one step per
+    year — the notebook averages over it where the ERA5 cell has to resample
+    first.
+
+    Two things differ from ERA5 and are handled here rather than in the
+    notebook. GLEAM is global at 0.1 degrees while the ERA5 archive is already
+    cut to the Andes, so `shape` clips the stack to the basins' bounding box on
+    open; skipping that reads 46 global years twice over. And it names its axes
+    lat/lon, which is renamed to y/x so that `clip_to` and `exact_extract` both
+    find the spatial dimensions.
+    """
+    period = period or cfg.period_ref_climate
+    pattern = cfg.inputs['gleam'].format(variable="*", year="*")
+
+    stack = xr.open_mfdataset(str(cfg.data_dir('gleam') / pattern))
+    stack = stack.sel(time=slice(period[0], period[1])).rename(lat="y", lon="x")
+    return clip_to(stack, shape) if shape is not None else stack
 
 
 def glacier_attributes(shape: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
@@ -188,14 +231,19 @@ def lai_attributes(shape: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     the twelve basin means: `lai_max` is the largest, `lai_diff` the largest
     minus the smallest.
 
-    Basins the source never retrieves get NaN, not zero. GIMMS LAI4g masks
-    barren surfaces — the Atacama and the high central Andes — and "no LAI was
-    measured here" is a different statement from "the LAI here is zero", which
-    the grid also contains. Roughly 8% of the basins sit entirely inside that
-    mask.
+    Unretrieved pixels count as zero leaf area rather than as missing data.
+    GIMMS LAI4g reports nothing over barren surfaces — the Atacama, and the bare
+    rock and ice above the vegetation limit — but inside a catchment those are
+    real surface with no leaves on it, so excluding them would report the mean
+    LAI of the vegetated fraction instead of the basin mean, and would leave the
+    driest basins with no value at all. The fill is safe because the masking is
+    permanent, never seasonal: in the Andes every pixel is retrieved in all
+    twelve months or in none, so a filled pixel cannot manufacture an amplitude
+    in `lai_diff`. Fully barren basins (56 of the 726 in v11) come out at zero.
     """
     lai = xr.open_dataset(cfg.data_dir('lai') / cfg.inputs['lai_climatology']).lai
     lai = clip_to(lai.rename(lat="y", lon="x"), shape)
+    lai = lai.fillna(0)  # unretrieved surface carries no leaves
 
     # One column per month, in the row order of `shape` — hence the positional
     # assignment below, which holds whether the caller indexes by gauge_id
