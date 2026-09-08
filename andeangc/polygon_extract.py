@@ -74,12 +74,18 @@ def extract_attributes(raster: xr.DataArray | xr.Dataset | str,
                        shapefile: gpd.GeoDataFrame,
                        attributes: str | dict[str, str],
                        fun: str = "mean") -> gpd.GeoDataFrame:
-    """Zonal statistics of one raster, joined onto the basins by gauge_id.
+    """Zonal statistics of one raster, attached to the basins by gauge_id.
 
     `attributes` is either a column name — taken with `fun` — or a
     {column name: statistic} mapping, which is read in a single pass over the
     raster. Prefer the mapping when several statistics come from the same
     raster: three separate calls read it three times.
+
+    An attribute the basins already carry is overwritten in place, keeping its
+    position. That is what makes notebook 06 re-runnable: it reads the shapefile
+    it wrote last time, so on the second run every column it computes is already
+    there — joining instead raised `columns overlap but no suffix specified`, and
+    a suffix would have been worse, silently publishing `elev_mean_x`.
     """
     if isinstance(attributes, str):
         attributes = {attributes: fun}
@@ -95,9 +101,12 @@ def extract_attributes(raster: xr.DataArray | xr.Dataset | str,
                        output="pandas", progress=False)
     ds = ds.set_index("gauge_id")
 
-    shape = shapefile
+    # Aligned on gauge_id, then assigned positionally: `ds` comes back in the row order of
+    # the basins, but reindexing keeps the two tied to the id rather than to that order. A
+    # basin the extraction misses reads NaN instead of keeping the previous run's value.
+    shape = shapefile.copy()
     for attribute_name, statistic in attributes.items():
-        shape = shape.join(ds[statistic].rename(attribute_name), on="gauge_id")
+        shape[attribute_name] = ds[statistic].reindex(shapefile["gauge_id"]).to_numpy()
 
     return shape
 

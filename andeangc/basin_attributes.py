@@ -218,8 +218,10 @@ def dam_attributes(shape: gpd.GeoDataFrame, capacity_threshold: float = 100) -> 
     counts = gpd.sjoin(dams, shape.reset_index(), how='inner', predicate='within')
     counts = counts.groupby('gauge_id').size()
 
-    shape = shape.join(counts.rename("dams_count"))
-    shape["dams_count"] = shape["dams_count"].fillna(0)
+    # Assigned rather than joined, so a re-run over basins that already carry the column
+    # overwrites it instead of raising on the overlap (see `extract_attributes`).
+    shape = shape.copy()
+    shape["dams_count"] = counts.reindex(shape.index).fillna(0)
     return shape
 
 
