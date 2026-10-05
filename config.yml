@@ -4,7 +4,7 @@ data_root: /home/rooda/Datasets
 # Project data, versioned. Everything this pipeline writes lives under
 # data/<version>/: the published artifacts sit directly in that folder, with
 # climate/ and figures/ beside them.
-version: "v11"
+version: "v12"
 
 # Gauge ID formatting
 gauge_id_zfill: 8
@@ -19,6 +19,12 @@ gauge_id_prefix_pa: "M"
 period_q: ["1950-01-01", "2024-12-31"]
 period_climate: ["1960-01-01", "2025-12-31"] 
 period_ref_climate: ["1990-01-01", "2019-12-31"]
+
+# Whether nb07 extracts the CMIP6 projections into climate/future/ 
+climate_projections: false
+
+## Whether nb05 shows the manual-review widgets
+qc_manual_review: false
 
 # RGI version + glacier thresholds
 rgi_versions: ["RGI60", "RGI70"]  # glacier area computed as an attribute for each
