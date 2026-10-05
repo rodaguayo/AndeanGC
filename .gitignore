@@ -1,13 +1,13 @@
-# Byte-compiled / optimized / DLL files
+# Python bytecode
 __pycache__/
 *.py[codz]
 *$py.class
 
-# Jupyter Notebook checkpoints
+# Jupyter checkpoints
 .ipynb_checkpoints/
 */.ipynb_checkpoints/*
 
-# Environment
+# Virtual environments
 .env
 .venv/
 venv/
@@ -21,12 +21,21 @@ venv/
 # Pixi environment
 .pixi/
 
-# Cache
+# Tool caches and coverage
 .mypy_cache/
 .pytest_cache/
 .ruff_cache/
 .coverage
+
+# Editor settings
 .vscode
 
+# Project data and temporary files
 /data
 /temp
+
+# Project-specific files
+IMPROVEMENTS.md
+.gitignore
+NOTES.MD
+CLAUDE.md
