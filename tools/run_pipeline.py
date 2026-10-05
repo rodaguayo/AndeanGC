@@ -65,7 +65,7 @@ def run_notebook(path: Path, out_dir: Path) -> float:
             return
         cell_started[cell_index] = time.monotonic()
         n = code_cells.index(cell_index) + 1
-        print(f"\n[{path.stem[:2]} {n:>2}/{total}] {_first_line(cell.source)}", flush=True)
+        print(f"\n[{path.stem.split("_")[0]} {n:>2}/{total}] {_first_line(cell.source)}", flush=True)
 
     def on_cell_executed(cell, cell_index, execute_reply):
         if cell.cell_type != "code":

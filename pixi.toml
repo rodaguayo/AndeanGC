@@ -76,5 +76,8 @@ python tools/run_pipeline.py \
   processing/05_streamflow_qc.ipynb \
   processing/06_basins_attributes.ipynb \
   processing/07_basins_climate.ipynb \
-  processing/08_hydro_signatures.ipynb\
+  processing/08_hydro_signatures.ipynb \
+  figures/figure01_map_data.ipynb \
+  figures/figure02_stats.ipynb \
+  figures/figure03_hydro.ipynb\
 """
