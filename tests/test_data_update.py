@@ -13,6 +13,7 @@ not which letter it starts with. The spelling itself is pinned in `test_data_hom
 """
 
 import pandas as pd
+import pytest
 
 from andeangc import config as cfg
 from andeangc import data_update
@@ -148,3 +149,59 @@ def test_pmet_stations_absent_from_the_published_set_are_not_introduced(tmp_path
     out = data_update.update_pmet_data(original, updated_cl, updated_arg, tmp_path / "out.csv")
 
     assert list(out.columns) == [pa_id(101)]
+
+
+def write_camels_pe(tmp_path, stations, timeseries, area):
+    """The three CAMELS-PE files `update_senamhi_data` reads: stations (coordinates),
+    topographic attributes (area, km2) and the long-format timeseries (flow_obs, mm/d)."""
+    pd.DataFrame(stations, columns=["gauge_id", "gauge_lat", "gauge_lon"]).to_csv(tmp_path / "st.csv", index=False)
+    pd.DataFrame(area.items(), columns=["gauge_id", "area"]).to_csv(tmp_path / "topo.csv", index=False)
+    pd.DataFrame(timeseries, columns=["date", "gauge_id", "flow_obs"]).to_csv(tmp_path / "ts.csv", index=False)
+    return tmp_path / "st.csv", tmp_path / "topo.csv", tmp_path / "ts.csv"
+
+
+def write_senamhi_metadata(path, rows):
+    pd.DataFrame(rows, columns=["gauge_id", "gauge_lat", "gauge_lon"]).to_csv(path, index=False)
+    return path
+
+
+def test_senamhi_is_filled_from_the_co_located_camels_pe_gauge(tmp_path):
+    """CAMELS-PE shares no key with SENAMHI, so the match is by location; the published
+    value wins on overlap, and mm/d is converted back with the CAMELS-PE area."""
+    original = write_original(tmp_path / "o.csv", ["2020-01-01", "2020-01-02"], ["P00000008"], 1.0)
+    meta = write_senamhi_metadata(tmp_path / "m.csv", [["P00000008", -8.6579, -78.2617]])
+    files = write_camels_pe(tmp_path,
+                            [["PE_211408", -8.6580, -78.2618]],            # ~15 m away
+                            [["2020-01-02", "PE_211408", 999.0],           # overlaps -> ignored
+                             ["2020-01-03", "PE_211408", 8.64]],           # gap -> 8.64 mm/d
+                            {"PE_211408": 1000.0})
+
+    out = data_update.update_senamhi_data(original, meta, *files, tmp_path / "out.csv")
+
+    assert list(out.columns) == ["P00000008"]
+    assert out.loc["2020-01-02", "P00000008"] == 1.0                    # published value wins
+    assert out.loc["2020-01-03", "P00000008"] == 100.0                  # 8.64 mm/d over 1000 km2
+
+
+def test_distant_camels_pe_gauges_are_not_matched(tmp_path):
+    """A CAMELS-PE gauge beyond `camels_pe_max_distance` is a different station — often a
+    larger basin downstream — and must neither fill a gap nor add a column."""
+    original = write_original(tmp_path / "o.csv", ["2020-01-01"], ["P00000008"], 1.0)
+    meta = write_senamhi_metadata(tmp_path / "m.csv", [["P00000008", -8.6579, -78.2617]])
+    files = write_camels_pe(tmp_path,
+                            [["PE_1", -8.70, -78.2617]],                   # ~4.7 km away
+                            [["2020-01-02", "PE_1", 5.0]],
+                            {"PE_1": 1000.0})
+
+    out = data_update.update_senamhi_data(original, meta, *files, tmp_path / "out.csv")
+
+    assert list(out.columns) == ["P00000008"]
+    assert out["P00000008"].dropna().index.tolist() == [pd.Timestamp("2020-01-01")]
+
+
+def test_two_gauges_claiming_one_raises(tmp_path):
+    ours = pd.DataFrame({"gauge_lat": [-8.0], "gauge_lon": [-78.0]}, index=["P1"])
+    theirs = pd.DataFrame({"gauge_lat": [-8.0, -8.001], "gauge_lon": [-78.0, -78.0]}, index=["PE_a", "PE_b"])
+
+    with pytest.raises(ValueError):
+        data_update.match_gauges(ours, theirs, max_distance_km=1)

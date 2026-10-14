@@ -9,9 +9,11 @@ Contains processed institutional streamflow datasets:
 | Region | Subregion | Source/Platform | Reference/Website |
 |--------|-----------|-----------------|-------------------|
 | Chile | < 40° S | CAMELS-CL | [Link](https://doi.org/10.5194/hess-22-5817-2018) |
+| Chile | < 40° S | DGA / MAPAS2 (2020–2025 extension) | [Link](https://mapas2.mop.gob.cl/) |
 | Patagonia | > 40° S | PMET-obs | [Link](https://www.nature.com/articles/s41597-023-02828-2) |
 | Argentina | > 40° S | SNIH | [Link](http://snih.hidricosargentina.gob.ar/) |
 | Peru | - | SENAMHI / ANDREA | [Link](https://snirh.ana.gob.pe/ANDREA/Inicio.aspx) |
+| Peru | - | CAMELS-PE (gap filling) | [Link](https://essd.copernicus.org/preprints/essd-2026-386/) |
 
 Additional data sources:
 - **Glacier coverage**: RGI v6.0 and v7.0
@@ -24,7 +26,7 @@ Additional data sources:
 
 The data processing pipeline consists of eight notebooks in the [`processing/`](processing/) folder, run in order:
 
-- [`01_data_preprocessing.ipynb`](processing/01_data_preprocessing.ipynb): Cleans, standardizes and updates raw institutional streamflow data (SENAMHI, SNHI, CAMELS-CL, PMETobs)
+- [`01_data_preprocessing.ipynb`](processing/01_data_preprocessing.ipynb): Cleans, standardizes and updates raw institutional streamflow data (SENAMHI, SNHI, CAMELS-CL, PMETobs); fills SENAMHI gaps from CAMELS-PE
 - [`02_basins_delineation.ipynb`](processing/02_basins_delineation.ipynb): Delineates drainage basins from gauge coordinates using FABDEM and WhiteboxTools; converts basins to vector
 - [`03_dataset_merging.ipynb`](processing/03_dataset_merging.ipynb): Merges standardized datasets and assembles the unified AndeanGC metadata, timeseries, and basin geometries
 - [`04_dataset_filtering.ipynb`](processing/04_dataset_filtering.ipynb): Applies selection and quality filters (glacier coverage > 0.1%, data length, intervention keywords) and saves the cleaned dataset
