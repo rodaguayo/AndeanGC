@@ -13,10 +13,13 @@ gauge_id_prefix_ar: "A"
 gauge_id_prefix_cl: "C"
 gauge_id_prefix_pa: "M"
 
+# CAMELS-PE gauges are matched to SENAMHI ones by location, within this distance (km)
+camels_pe_max_distance: 1
+
 # Periods (full ISO dates). period_ref_climate is the reference period every derived
 # attribute is computed over — the climate attributes in nb06 and the hydrological
 # signatures in nb08 — so an attribute and a signature describe the same years.
-period_q: ["1950-01-01", "2024-12-31"]
+period_q: ["1950-01-01", "2025-12-31"]
 period_climate: ["1960-01-01", "2025-12-31"] 
 period_ref_climate: ["1990-01-01", "2019-12-31"]
 
