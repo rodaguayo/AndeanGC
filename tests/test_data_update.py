@@ -88,7 +88,7 @@ def test_the_series_is_extended_to_the_new_horizon(tmp_path):
 
     out = data_update.update_camels_cl_data(original, updated, tmp_path / "out.csv")
 
-    assert out.index.max() == pd.Timestamp("2025-12-31")
+    assert out.index.max() == pd.Timestamp(cfg.period_q[1])
 
 
 def test_camels_output_is_keyed_by_gauge_id(tmp_path):

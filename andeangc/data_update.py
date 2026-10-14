@@ -1,7 +1,7 @@
 """Extend the published streamflow datasets with recent records (notebook 01).
 
 CAMELS-CL and PMET-obs both stop well before the present. Both functions here reindex the original
-series out to the new end date and fill the gap with `combine_first`, so the
+series out to the end of `period_q` and fill the gap with `combine_first`, so the
 published values always win where the two overlap.
 Only gauges already present in the original dataset are carried over
 
@@ -36,7 +36,7 @@ def update_camels_cl_data(original_file: str | Path, updated_parquet: str | Path
     original_data = pd.read_csv(original_file, index_col='date', parse_dates=['date'])
     original_data.columns = data_homogenize.format_gauge_ids(
         original_data.columns, cfg.gauge_id_prefix_cl, cfg.gauge_id_zfill)
-    original_data = original_data.reindex(pd.date_range(start=original_data.index.min(), end='2025-12-31', freq='D'))
+    original_data = original_data.reindex(pd.date_range(start=original_data.index.min(), end=cfg.period_q[1], freq='D'))
 
     # load and pivot updated data
     updated_data = pd.read_parquet(updated_parquet)[['CODIGO ESTACION', 'FECHA', 'Caudal_diario']]
@@ -80,7 +80,7 @@ def update_pmet_data(original_file: str | Path, updated_cl_file: str | Path,
     original_data.columns = data_homogenize.format_gauge_ids(
         original_data.columns, cfg.gauge_id_prefix_pa, cfg.gauge_id_zfill)
     original_data.index = pd.to_datetime(original_data.index)
-    original_data = original_data.reindex(pd.date_range(start=original_data.index.min(), end='2025-12-31', freq='D'))
+    original_data = original_data.reindex(pd.date_range(start=original_data.index.min(), end=cfg.period_q[1], freq='D'))
     original_data.index.name = "date"
 
     # Load and pivot updated Chile data
@@ -144,8 +144,8 @@ def update_senamhi_data(original_file: str | Path, metadata_file: str | Path,
 
     CAMELS-PE gauges are matched to ours within `camels_pe_max_distance` km, and `flow_obs` is
     converted back to m3/s with the CAMELS-PE catchment area — the area it was normalised by.
-    The output runs to the end of the CAMELS-PE record (2025), past `period_q`, like the other
-    updates here.
+    Unlike the other updates here, the output is not reindexed to `period_q`: it runs to the
+    end of the CAMELS-PE record, and nb03 slices it on load.
     """
     original_data = pd.read_csv(original_file, index_col='date', parse_dates=['date'])
 
