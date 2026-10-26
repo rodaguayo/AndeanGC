@@ -2,6 +2,19 @@
 
 ---
 
+## v1.2 — 2026-10-26
+
+- **Changed** — streamflow period extended to 2025 (`period_q`).
+- **Changed** — SENAMHI gaps filled from CAMELS-PE observed flow at the co-located gauges (published values kept).
+- **Added** — `data_dictionary.csv`: file, description, unit and source of every published variable.
+- **Breaking** — `AndeanGC_data.csv` (raw streamflow) is no longer published; use `AndeanGC_data_qc.csv`.
+- **Breaking** — `low_prec_freq_ERA5` and `high_prec_freq_ERA5` are now days per year (CAMELS definition); they held total days over event days.
+- **Changed** — SNHI records re-downloaded in full (`tools/download_snhi.py`): extended to 2025, gaps filled, full precision, some provider revisions.
+- **Added** — Zongo glacier gauge (Bolivia, GLACIOCLIM), id `B00000001`.
+- **Changed** — signatures north of 20°S and south of 45°S use a September–August water year (new column `sig_wy_start_month`); their `hfd_mean` moves ~3–4 months later.
+
+---
+
 ## v1.1 — 2026-09-08
 
 - **Changed** — historical ERA5 climate now runs 1960–2025.
