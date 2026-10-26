@@ -125,8 +125,12 @@ qc_group_window: "10D"    # flagIsolated: max width of an isolated group
 qc_range_quantile: 0.99   # flagRange upper bound = this quantile ...
 qc_range_factor: 6        # ... times this factor
 
-## Hydrological signatures. The austral hydrological year runs April-March
+## Hydrological signatures. The water year starts in the low-flow season, which the Andes do not share:
+## April-March (the Chilean convention) between the latitude bounds, September-August north and south of
+## them, where April falls just after the Feb-Mar peak (tropical Andes) or on the summer melt (Patagonia)
 water_year_start_month: 4
+water_year_start_month_outer: 9
+water_year_lat_bounds: [-45, -20]   # gauge_lat band that keeps water_year_start_month
 sig_min_coverage: 0.9         # fraction of days a water year needs to count as complete
 sig_min_years: 5              # complete water years below which a gauge gets no signatures
 sig_bfi_alpha: 0.925          # Lyne-Hollick filter parameter (Ladson et al. 2013)
