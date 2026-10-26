@@ -63,6 +63,8 @@ check-notebooks = "nbstripout --verify processing/*.ipynb figures/*.ipynb"
 # kaleido >=1 renders figures through a real browser, which conda-forge does not
 # ship. Run once after `pixi install` to enable fig.write_image in figures/.
 get-chrome = "plotly_get_chrome -y"
+# Re-download every SNHI workbook in data/resources/SNHI_ARG/raw from the SNIH website.
+download-snhi = "python tools/download_snhi.py"
 
 # The pipeline itself. The stage order lives here, where it is enforced;
 # tools/run_pipeline.py only executes what it is handed, in the order given.

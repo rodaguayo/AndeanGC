@@ -1,6 +1,6 @@
 # Andean Glacierized Catchment (Andean-GC) dataset
 
-A comprehensive streamflow dataset for glacierized basins across the Andes mountains (glacier area > 0.1%), integrating data from Chile, Peru, and Argentina. The dataset combines institutional streamflow records with basin characteristics including topographic, climatic, and land cover attributes, along with historical climate data for hydrological analysis and modeling. The final dataset is available on Zenodo: [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18035800.svg)](https://doi.org/10.5281/zenodo.18035800)
+A comprehensive streamflow dataset for glacierized basins across the Andes mountains (glacier area > 0.1%), integrating data from Chile, Peru, Argentina, and Bolivia. The dataset combines institutional streamflow records with basin characteristics including topographic, climatic, and land cover attributes, along with historical climate data for hydrological analysis and modeling. The final dataset is available on Zenodo: [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18035800.svg)](https://doi.org/10.5281/zenodo.18035800)
 
 ## Sources
 
@@ -14,6 +14,7 @@ Contains processed institutional streamflow datasets:
 | Argentina | > 40° S | SNIH | [Link](http://snih.hidricosargentina.gob.ar/) |
 | Peru | - | SENAMHI / ANDREA | [Link](https://snirh.ana.gob.pe/ANDREA/Inicio.aspx) |
 | Peru | - | CAMELS-PE (gap filling) | [Link](https://essd.copernicus.org/preprints/essd-2026-386/) |
+| Bolivia | Zongo glacier | GLACIOCLIM | [Link](https://glacioclim.osug.fr/Donnees-des-Andes) |
 
 Additional data sources:
 - **Glacier coverage**: RGI v6.0 and v7.0
@@ -26,7 +27,7 @@ Additional data sources:
 
 The data processing pipeline consists of eight notebooks in the [`processing/`](processing/) folder, run in order:
 
-- [`01_data_preprocessing.ipynb`](processing/01_data_preprocessing.ipynb): Cleans, standardizes and updates raw institutional streamflow data (SENAMHI, SNHI, CAMELS-CL, PMETobs); fills SENAMHI gaps from CAMELS-PE
+- [`01_data_preprocessing.ipynb`](processing/01_data_preprocessing.ipynb): Cleans, standardizes and updates raw institutional streamflow data (SENAMHI, SNHI, CAMELS-CL, PMETobs, GLACIOCLIM)
 - [`02_basins_delineation.ipynb`](processing/02_basins_delineation.ipynb): Delineates drainage basins from gauge coordinates using FABDEM and WhiteboxTools; converts basins to vector
 - [`03_dataset_merging.ipynb`](processing/03_dataset_merging.ipynb): Merges standardized datasets and assembles the unified AndeanGC metadata, timeseries, and basin geometries
 - [`04_dataset_filtering.ipynb`](processing/04_dataset_filtering.ipynb): Applies selection and quality filters (glacier coverage > 0.1%, data length, intervention keywords) and saves the cleaned dataset
@@ -87,5 +88,5 @@ Rodrigo Aguayo — [Personal website](https://rodaguayo.github.io/)
 
 ## Acknowledgments
 
-- Data providers: DGA Chile, SNIH Argentina, SENAMHI Peru
+- Data providers: DGA Chile, SNIH Argentina, SENAMHI Peru, GLACIOCLIM Bolivia
 - Funding: FWO

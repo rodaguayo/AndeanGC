@@ -12,6 +12,7 @@ gauge_id_prefix_pe: "P"
 gauge_id_prefix_ar: "A"
 gauge_id_prefix_cl: "C"
 gauge_id_prefix_pa: "M"
+gauge_id_prefix_bo: "B"
 
 # CAMELS-PE gauges are matched to SENAMHI ones by location, within this distance (km)
 camels_pe_max_distance: 1

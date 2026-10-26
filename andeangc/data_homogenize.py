@@ -9,6 +9,8 @@ here report and skip a workbook they cannot read rather than aborting the batch:
   positions. `process_excel_files` is the entry point.
 - SNHI: a two-column daily table under a title row that carries the station number.
   `read_snhi_files` is the entry point, and returns the batch already keyed by `gauge_id`.
+- GLACIOCLIM (Zongo glacier, Bolivia): one tab-separated text file per hydrological year,
+  hourly, for a single gauge. `read_glacioclim_files` averages it to daily flow.
 
 `format_gauge_ids`, `stamp_gauge_ids` and `assign_gauge_ids` are the tail of
 homogenisation and serve every source, including the two this module does not parse:
@@ -222,6 +224,43 @@ def read_snhi_files(file_paths: Sequence[Path], prefix: str, zfill: int) -> pd.D
         return pd.DataFrame()
 
     data = pd.concat(series, axis=1, sort=False).sort_index()
+    data.index.name = "date"
+    return data
+
+
+def read_glacioclim_files(file_paths: Sequence[Path], gauge_id: str) -> pd.DataFrame:
+    """Read the GLACIOCLIM hourly files of one gauge into a daily-flow frame.
+
+    Each file covers one hydrological year, September to August, and is named after
+    it (`1999_2000.txt`). Its year column is not reliable: in some files it rolls
+    over to the new year a day late. So the year is taken from the file name and
+    advanced where the day of year drops back, and the hour from the time column.
+    A day absent from a file (31 December in two leap years) becomes a gap.
+
+    Discharge is the last column, with -9999 for missing hours. A day's mean is kept
+    only when all 24 hours were measured.
+    """
+    series = []
+
+    for file_path in file_paths:
+        table = pd.read_csv(file_path, sep="\t").dropna(how="all")
+        doy = np.floor(table.iloc[:, 1].astype(float) + 1e-6).astype(int)
+        year = int(Path(file_path).stem[:4]) + (doy.diff() < 0).cumsum()
+        timestamps = (pd.to_datetime(year.astype(str), format="%Y")
+                      + pd.to_timedelta(doy - 1, unit="D")
+                      + pd.to_timedelta(table.iloc[:, 2].astype(int), unit="h"))
+
+        flow = table.iloc[:, -1].astype(float)
+        series.append(pd.Series(flow.mask(flow == -9999).to_numpy(), index=pd.DatetimeIndex(timestamps)))
+
+    if not series:
+        return pd.DataFrame()
+
+    hourly = pd.concat(series).sort_index()
+    hourly = hourly[~hourly.index.duplicated(keep="first")]
+    daily = hourly.resample("D").agg(["mean", "count"])
+
+    data = daily["mean"].where(daily["count"] == 24).to_frame(gauge_id)
     data.index.name = "date"
     return data
 

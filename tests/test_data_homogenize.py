@@ -1,8 +1,8 @@
 """The parsers that make sense of the raw provider workbooks.
 
 Each is exercised on synthetic workbooks in the layout its provider produces — the
-ANA portal for SENAMHI, the SNHI export for Argentina — so these tests need no
-access to the real data.
+ANA portal for SENAMHI, the SNHI export for Argentina, the GLACIOCLIM text files for
+Zongo — so these tests need no access to the real data.
 """
 
 import pandas as pd
@@ -269,3 +269,59 @@ def test_snhi_workbook_without_a_station_number_is_skipped_not_guessed(tmp_path)
 
 def test_snhi_on_no_input_returns_an_empty_frame():
     assert data_homogenize.read_snhi_files([], "X", 8).empty
+
+
+def write_glacioclim_file(path, rows):
+    """Write a file in the GLACIOCLIM layout: tab-separated, one row per hour, discharge last.
+
+    `rows` are (year, doy, hour, flow); the six meteorological columns between them and
+    the discharge are filled with zeros, since the reader ignores them.
+    """
+    header = ["year", "DOY", "time(h)", "SWin(W/m²)", "T(°C)", "RH(%)", "U(m/s)",
+              "Precip(mmwe/h)", "LWin(W/m²)", "LWout(W/m²)", "Q(m³/s)"]
+    lines = [[year, doy + hour / 24, hour] + [0.0] * 7 + [flow] for year, doy, hour, flow in rows]
+    pd.DataFrame(lines, columns=header).to_csv(path, sep="\t", index=False)
+    return path
+
+
+def full_day(year, doy, flow):
+    return [(year, doy, hour, flow) for hour in range(24)]
+
+
+def test_glacioclim_year_comes_from_the_file_name_not_the_year_column(tmp_path):
+    """In some files the year column rolls over a day late; the day of year does not."""
+    path = write_glacioclim_file(
+        tmp_path / "2004_2005.txt",
+        full_day(2004, 366, 1.0) + full_day(2004, 1, 2.0) + full_day(2005, 2, 3.0))
+
+    data = data_homogenize.read_glacioclim_files([path], "X")
+
+    assert list(data.columns) == ["X"]
+    assert data.index.name == "date"
+    assert list(data.index) == list(pd.date_range("2004-12-31", "2005-01-02"))
+    assert list(data["X"]) == [1.0, 2.0, 3.0]
+
+
+def test_glacioclim_day_missing_from_a_file_becomes_a_gap(tmp_path):
+    path = write_glacioclim_file(
+        tmp_path / "2012_2013.txt", full_day(2012, 365, 1.0) + full_day(2013, 1, 2.0))
+
+    data = data_homogenize.read_glacioclim_files([path], "X")
+
+    assert list(data.index) == list(pd.date_range("2012-12-30", "2013-01-01"))
+    assert data["X"].isna().tolist() == [False, True, False]
+
+
+def test_glacioclim_day_short_of_measured_hours_is_dropped(tmp_path):
+    """-9999 marks a missing hour; a mean over the remaining ones would bias the day."""
+    gappy = full_day(2005, 244, 1.0)
+    gappy[12] = (2005, 244, 12, -9999)
+    path = write_glacioclim_file(tmp_path / "2005_2006.txt", gappy + full_day(2005, 245, 2.0))
+
+    data = data_homogenize.read_glacioclim_files([path], "X")
+
+    assert data["X"].isna().tolist() == [True, False]
+
+
+def test_glacioclim_on_no_input_returns_an_empty_frame():
+    assert data_homogenize.read_glacioclim_files([], "X").empty

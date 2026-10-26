@@ -6,9 +6,11 @@ pour points and unnests the basins, and `basins_to_gdf` vectorises them.
 Notebook 02 drives them region by region and writes the result.
 
 Two identifiers name each region and they are not interchangeable: `source` is
-the institution (SENAMHI, SNHI), which names the gauge files and the delineated
-output, while `region` is the DEM tag (PERU, ARG). Together they name the
-resources folder, e.g. ``SENAMHI_PERU/``. Notebook 02 holds the pairs.
+the institution (SENAMHI, SNHI, GLACIOCLIM), which names the gauge files and the
+delineated output, while `region` is the region tag (PERU, ARG, BO). Together they
+name the resources folder, e.g. ``SENAMHI_PERU/``. `route_flow` takes a DEM tag
+instead, which is usually the region tag but not always: Bolivia (BO) is routed on
+the Peru DEM. Notebook 02 holds both mappings.
 
 Every stage returns the paths it wrote, so the notebook can hand that exact
 list to `remove_files` instead of globbing the shared DEM directory.
@@ -117,7 +119,7 @@ def delineate(source: str, routing: dict[str, Path], pour_points: str | Path | N
     per nesting level, so the rasters are collected by glob afterwards.
     """
     wbt = wbt or whitebox_tools()
-    snap_dist = snap_dist or cfg.snap_dist
+    snap_dist = cfg.snap_dist if snap_dist is None else snap_dist
     pour_points = Path(pour_points) if pour_points else temp_dir() / f"stream_gauges_{source}.shp"
     snapped = temp_dir() / f"stream_gauges_{source}_snap.shp"
 
