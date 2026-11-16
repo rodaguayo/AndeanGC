@@ -18,7 +18,7 @@ Contains processed institutional streamflow datasets:
 
 Additional data sources:
 - **Glacier coverage**: RGI v6.0 and v7.0
-- **Climate data**: ERA5 (1960-2025)
+- **Climate data**: ERA5 (1960-2025); precipitation corrected with CHELSA V2.1 monthly climatologies (1981-2010)
 - **Evaporation**: GLEAM v4.3a (1980-2025)
 - **Topography**: FABDEM (based on COPDEM)
 - **Land cover**: CGLOPS-1 (2019)
@@ -33,8 +33,8 @@ The data processing pipeline consists of eight notebooks in the [`processing/`](
 - [`04_dataset_filtering.ipynb`](processing/04_dataset_filtering.ipynb): Applies selection and quality filters (glacier coverage > 0.1%, data length, intervention keywords) and saves the cleaned dataset
 - [`05_streamflow_qc.ipynb`](processing/05_streamflow_qc.ipynb): Performs automatic and visual/manual quality check on streamflow time series using `saqc`
 - [`06_basins_attributes.ipynb`](processing/06_basins_attributes.ipynb): Extracts multiple basin attributes (topographic, climatic, glacier, land cover, dams, leaf area index)
-- [`07_basins_climate.ipynb`](processing/07_basins_climate.ipynb): Processes historical climate time series from ERA5 reanalysis for selected basins
-- [`08_hydro_signatures.ipynb`](processing/08_hydro_signatures.ipynb): Computes the CAMELS hydrological signature set per catchment from the QC'd streamflow and the ERA5 precipitation, over the same reference period as the climate attributes (`config.yml:period_ref_climate`)
+- [`07_basins_climate.ipynb`](processing/07_basins_climate.ipynb): Processes historical climate time series from ERA5 reanalysis (CHELSA-corrected precipitation) for selected basins
+- [`08_hydro_signatures.ipynb`](processing/08_hydro_signatures.ipynb): Computes the CAMELS hydrological signature set per catchment from the QC'd streamflow and the CHELSA-corrected ERA5 precipitation, over the same reference period as the climate attributes (`config.yml:period_ref_climate`)
 
 Stage order matters: notebooks 03–06 read and overwrite the same three artifacts in place, so
 re-running an earlier stage after a later one desynchronises the metadata from the timeseries.
@@ -73,7 +73,7 @@ pixi shell
 If you use this dataset, please cite:
 
 ```
-Aguayo, R., Zekollari, H., van Tiel, M., Bolibar, J., Van Tricht, L., Ayala Ramos, A. I., & Ultee, L. (2026). Andean Glacierized Catchment (Andean-GC) dataset (Version v1.1) [Data set]. Zenodo. https://doi.org/10.5281/zenodo.18035800
+Aguayo, R., Zekollari, H., van Tiel, M., Bolibar, J., Van Tricht, L., Ayala Ramos, A. I., & Ultee, L. (2026). Andean Glacierized Catchment (Andean-GC) dataset (Version v1.2.1) [Data set]. Zenodo. https://doi.org/10.5281/zenodo.18035800
 ```
 
 Machine-readable metadata is in [CITATION.cff](CITATION.cff); GitHub renders it as the "Cite this repository" button and can export BibTeX or APA from it.

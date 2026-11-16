@@ -121,6 +121,10 @@ def era5_reference_stack(period: Sequence[str] | None = None) -> xr.Dataset:
     Left lazy and undisturbed otherwise: the notebook's climate cell does the
     aggregating, since that is where the attribute definitions live.
 
+    `prcp` is the CHELSA-corrected precipitation (`config.yml:inputs.era5_prcp`,
+    built by tools/correct_era5_chelsa.py), not the raw ERA5 file the pattern
+    also matches; the other variables are raw ERA5.
+
     The filenames come from `config.yml:inputs`, not from `period_climate`:
     the archive is stamped with the span it was downloaded with, which runs
     past the end of the published period.
@@ -129,6 +133,7 @@ def era5_reference_stack(period: Sequence[str] | None = None) -> xr.Dataset:
     pattern = cfg.inputs['era5'].format(variable="*")
 
     stack = xr.open_mfdataset(str(cfg.data_dir('era5') / pattern))
+    stack['prcp'] = xr.open_dataset(cfg.data_dir('era5') / cfg.inputs['era5_prcp'], chunks={}).prcp
     stack = stack.sel(time=slice(period[0], period[1]))
     stack['tas'] = (stack.tasmax + stack['tasmin']) / 2
     return stack

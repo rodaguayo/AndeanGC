@@ -4,7 +4,7 @@ data_root: /home/rooda/Datasets
 # Project data, versioned. Everything this pipeline writes lives under
 # data/<version>/: the published artifacts sit directly in that folder, with
 # climate/ and figures/ beside them.
-version: "v12"
+version: "v121"
 
 # Gauge ID formatting
 gauge_id_zfill: 8
@@ -23,6 +23,11 @@ camels_pe_max_distance: 1
 period_q: ["1950-01-01", "2025-12-31"]
 period_climate: ["1960-01-01", "2025-12-31"] 
 period_ref_climate: ["1990-01-01", "2019-12-31"]
+
+# ERA5 precipitation correction (tools/correct_era5_chelsa.py)
+prcp_factor_period: ["1981-01-01", "2010-12-31"]
+prcp_factor_cap: 2.5
+prcp_factor_floor_period: ["2000-01-01", "2025-12-31"]
 
 # Whether nb07 extracts the CMIP6 projections into climate/future/ 
 climate_projections: false
@@ -43,7 +48,9 @@ dem_resolution: 90
 dirs:
   dem: "dem"
   era5: "era5"
-  cmip6: "cmip6"
+  cmip6: "cmip6_corr"   # GDPCIR with the CHELSA precipitation factors (tools/correct_era5_chelsa.py)
+  cmip6_raw: "cmip6"    # GDPCIR as downloaded, bias-corrected to raw ERA5
+  chelsa: "pr_highres"
   land_cover: "land_cover"
   admin: "admin"
   dams: "dams"
@@ -61,6 +68,9 @@ inputs:
   land_cover: "GLOBAL/PROBAV_LC100_global_v3.0.1_2019.tif"  # dirs.land_cover
   dams: "GDAT_V1_DAMS.gpkg"                                 # dirs.dams
   era5: "{variable}_ERA5_1960_2025.nc"                      # dirs.era5              — one file per variable (06, 07)
+  era5_prcp: "prcp_ERA5corr_1960_2025.nc"                   # dirs.era5              — ERA5 x CHELSA factors, replaces raw prcp (06, 07)
+  chelsa_pr: "CHELSA_pr_{month:02d}_1981-2010_V.2.1.tif"    # dirs.chelsa            — CHELSA V2.1 monthly climatologies
+  prcp_factor: "pr_factor_CHELSA21_ERA5_monthly_025deg.nc"  # dirs.chelsa            — monthly factors CHELSA / ERA5
   lai_climatology: "GIMMS_LAI4g_V1.2_SA_1982_2020_climatology.nc"  # dirs.lai        — 12-month LAI climatology (06)
   gleam: "{variable}_{year}_GLEAM_v4.3a_YR.nc"              # dirs.gleam            — one file per variable and year (06)
 
