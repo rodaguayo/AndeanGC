@@ -2,6 +2,13 @@
 
 ---
 
+## v1.2.1 — 2026-11-16
+
+- **Breaking** — ERA5 precipitation corrected with CHELSA V2.1 monthly factors 
+- **Changed** — `runoff_ratio` and `stream_elas` use the corrected precipitation.
+
+---
+
 ## v1.2 — 2026-10-26
 
 - **Changed** — streamflow period extended to 2025 (`period_q`).
