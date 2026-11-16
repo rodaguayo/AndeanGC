@@ -183,14 +183,16 @@ def glacier_cover(shape: gpd.GeoDataFrame, rgi_version: str, epsg_utm: int = 327
 
 
 def glacier_attributes(shape: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
-    """Elevation change rate (m/yr) and ice volume (km3) per basin.
+    """Elevation change rate (mm/yr) and ice volume (km3) per basin.
 
     dhdt is an average over the basin; the volumes are sums, so they are totals
-    for the glaciers inside it.
+    for the glaciers inside it. The dhdt mosaic is in mm/yr, 1000x the m/yr of
+    the Hugonnet et al. (2021) tiles it was built from, and ice-free cells hold 0
+    rather than nodata, so the mean is taken over the whole basin, not the ice.
     """
     outputs = cfg.outputs
 
-    dhdt = open_raster(cfg.data_dir('glacier_dhdt') / outputs['glacier_dhdt'], shape)  # in m/yr
+    dhdt = open_raster(cfg.data_dir('glacier_dhdt') / outputs['glacier_dhdt'], shape)  # in mm/yr
     shape = polygon_extract.extract_attributes(dhdt, shape, "glacier_dhdt", fun="mean")
 
     for attribute, output in (("glacier_volume_M22", 'glacier_volume_millan'),
